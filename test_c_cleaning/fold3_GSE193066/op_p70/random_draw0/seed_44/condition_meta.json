@@ -1,0 +1,9 @@
+{
+  "condition": "random_draw0",
+  "operating_point": "p70",
+  "n_removed": 105,
+  "n_fit_before": 783,
+  "n_fit_after": 678,
+  "remove_from": "fit",
+  "random_removal_seed": 20264611
+}

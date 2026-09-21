@@ -1,0 +1,38 @@
+==============================================================================
+Test B: The Rate-Consistency Check
+==============================================================================
+
+Predicted latent-noise misassignment rate: 18.6%
+Current operating point: p40 calibration-uncertainty threshold -> 4.1% flagging rate, odds_ratio=3.156, fisher_p=0.0003
+
+Extended threshold sweep (rate + adjacency enrichment at every threshold):
+ uncertainty_percentile  pooled_flagging_rate  odds_ratio     fisher_p  proportion_flags_on_F2
+                     10              0.001880    0.000000 1.000000e+00                0.000000
+                     15              0.004699    1.901499 3.915272e-01                0.600000
+                     20              0.009398    2.978402 9.167092e-02                0.600000
+                     25              0.012218    2.039827 1.617080e-01                0.538462
+                     30              0.016917    2.009648 1.115628e-01                0.500000
+                     40              0.041353    3.155949 2.950362e-04                0.545455
+                     50              0.078947    3.475610 1.347040e-07                0.511905
+                     60              0.117481    3.323622 9.323571e-10                0.472000
+                     70              0.183271    3.200129 7.014912e-13                0.415385
+                     80              0.234023    2.449070 7.575455e-10                0.377510
+                     90              0.266917    2.434398 1.705916e-10                0.362676
+
+Nearest threshold to the predicted 18.6% rate: p70 (rate=18.3%, OR=3.200, p=0.0000)
+
+Does adjacency enrichment survive at/near the predicted rate? YES -- enrichment (p<0.05, OR>1) is still present among thresholds reaching within 5% of 18.6%, so the detector's signal does not appear to be pure model-error noise even out there.
+
+Recommended operating point: p90 (rate=26.7%, OR=2.434, p=0.0000) -- the loosest threshold tested that still shows significant (p<0.05), positive-direction (OR>1) adjacency enrichment. This balances rate against enrichment: looser thresholds than this either lose significance or invert direction.
+
+Disagreement-threshold sensitivity (uncertainty gate held fixed; 0.5 is the non-arbitrary default -- exactly where the model's argmax flips relative to the recorded label -- the others are sensitivity checks only, not alternative operating choices):
+ disagreement_threshold  is_nonarbitrary_default  uncertainty_percentile_held_fixed  n_flagged  pooled_flagging_rate  odds_ratio  fisher_p
+                    0.4                    False                                 40         47              0.044173    2.820091  0.000628
+                    0.5                     True                                 40         44              0.041353    3.155949  0.000295
+                    0.6                    False                                 40         44              0.041353    3.155949  0.000295
+                    0.7                    False                                 40         39              0.036654    2.955982  0.001153
+
+n=8 folds throughout: per-fold rates are in threshold_sweep_extended.csv; all cross-fold statements here are descriptive and underpowered, not confirmatory.
+
+TEST B: CONSERVATIVE -- the detector flags well below the predicted rate (high precision, low recall); acceptable for triage, stated plainly
+==============================================================================

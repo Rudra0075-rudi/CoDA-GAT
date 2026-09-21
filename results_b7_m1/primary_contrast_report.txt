@@ -1,0 +1,17 @@
+==============================================================================
+B7 PRIMARY CONTRAST (pre-registered in preregistration_b6.md)
+==============================================================================
+
+PRIMARY (marginal vs off, macro_f1, paired across folds):
+  marginal vs off: SKIPPED -- missing mode(s) in completed runs so far.
+
+Reminder: n=8 is underpowered (min detectable effect ~1.15 sigma_d).
+A PASS or NULL here is reported at face value, not re-litigated by the
+descriptive contrasts below.
+
+DESCRIPTIVE ONLY (not the pre-registered primary test):
+  conditional vs off: SKIPPED -- missing mode(s) in completed runs so far.
+
+  conditional vs marginal: SKIPPED -- missing mode(s) in completed runs so far.
+
+==============================================================================

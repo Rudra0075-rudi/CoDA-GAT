@@ -1,0 +1,120 @@
+{
+  "fold": 0,
+  "test_cohort": "GSE130970",
+  "cal_cohort": "cohort:GSE135251",
+  "mode": "off",
+  "seed": 42,
+  "m": 0,
+  "best_val_f1": 0.7194606887589343,
+  "auc": 0.8196226415094339,
+  "auc_ci_lo": 0.711613614819264,
+  "auc_ci_hi": 0.9276316681996037,
+  "macro_f1": 0.7055593685655457,
+  "balanced_acc": 0.739622641509434,
+  "pi_cal": 0.587378640776699,
+  "pi_test": 0.32051282051282054,
+  "prevalence_slope_macro_f1": 0.11971082988744199,
+  "prevalence_dose_response": {
+    "prevalence_grid": [
+      0.32051282051282054,
+      0.36499045722346696,
+      0.4094680939341134,
+      0.45394573064475974,
+      0.49842336735540615,
+      0.5429010040660526,
+      0.587378640776699
+    ],
+    "macro_f1_at_p": [
+      0.7065202556865485,
+      0.7232398684306384,
+      0.7375825406720478,
+      0.7330539775155152,
+      0.7388662975391683,
+      0.7319087528163943,
+      0.750007991959598
+    ]
+  },
+  "conformal": {
+    "0.05": {
+      "lac": {
+        "empirical_coverage": 0.9358974358974359,
+        "mean_set_size": 1.6153846153846154,
+        "conditional_coverage": {
+          "0": 0.9245283018867925,
+          "1": 0.96
+        },
+        "set_size_distribution": {
+          "1": 30,
+          "2": 48
+        },
+        "signed_coverage_gap": -0.014102564102564052
+      },
+      "aps": {
+        "empirical_coverage": 1.0,
+        "mean_set_size": 2.0,
+        "conditional_coverage": {
+          "0": 1.0,
+          "1": 1.0
+        },
+        "set_size_distribution": {
+          "2": 78
+        },
+        "signed_coverage_gap": 0.050000000000000044
+      }
+    },
+    "0.1": {
+      "lac": {
+        "empirical_coverage": 0.8846153846153846,
+        "mean_set_size": 1.435897435897436,
+        "conditional_coverage": {
+          "0": 0.8490566037735849,
+          "1": 0.96
+        },
+        "set_size_distribution": {
+          "1": 44,
+          "2": 34
+        },
+        "signed_coverage_gap": -0.015384615384615441
+      },
+      "aps": {
+        "empirical_coverage": 1.0,
+        "mean_set_size": 2.0,
+        "conditional_coverage": {
+          "0": 1.0,
+          "1": 1.0
+        },
+        "set_size_distribution": {
+          "2": 78
+        },
+        "signed_coverage_gap": 0.09999999999999998
+      }
+    },
+    "0.2": {
+      "lac": {
+        "empirical_coverage": 0.782051282051282,
+        "mean_set_size": 1.1025641025641026,
+        "conditional_coverage": {
+          "0": 0.7547169811320755,
+          "1": 0.84
+        },
+        "set_size_distribution": {
+          "1": 70,
+          "2": 8
+        },
+        "signed_coverage_gap": -0.017948717948717996
+      },
+      "aps": {
+        "empirical_coverage": 1.0,
+        "mean_set_size": 2.0,
+        "conditional_coverage": {
+          "0": 1.0,
+          "1": 1.0
+        },
+        "set_size_distribution": {
+          "2": 78
+        },
+        "signed_coverage_gap": 0.19999999999999996
+      }
+    }
+  }
+}

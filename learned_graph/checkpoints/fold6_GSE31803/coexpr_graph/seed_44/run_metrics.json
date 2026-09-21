@@ -1,0 +1,9 @@
+{
+  "variant": "coexpr_graph",
+  "fold": 6,
+  "seed": 44,
+  "best_val_f1": 0.7025475923852184,
+  "auc": 0.89765625,
+  "macro_f1": 0.55,
+  "balanced_acc": 0.596875
+}

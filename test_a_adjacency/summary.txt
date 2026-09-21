@@ -1,0 +1,19 @@
+==============================================================================
+Test A: The Adjacency Check
+==============================================================================
+
+Model: mode='off', 5 seeds averaged, 8 folds.
+Flag definition: disagreement=|p(F2+) - y_true| > 0.5 AND MC-dropout uncertainty <= the 40th percentile of that fold's CALIBRATION cohort's own MC-dropout distribution (never the test cohort's).
+
+Flagged 52/1064 test samples (4.9%). CAVEAT: flagging rate 4.9% is BELOW the sensible 15-25% band -- the flagged set may be too small/strict to draw a reliable conclusion. Check threshold_sensitivity.csv or re-run with a higher --primary-percentile.
+
+Stage distribution (flagged vs unflagged):
+            F0   F1   F2   F3  F4
+flagged     10    8   27    7   0
+unflagged  283  171  264  250  44
+
+2x5 chi-square (all 5 stages): chi2=18.357, p=0.0011
+2x2 Fisher's exact (adjacent F1/F2 vs distant F0/F3/F4, one-sided, H1: flagged more likely adjacent): odds_ratio=2.731, p=0.0005
+
+TEST A: PASS -- flags concentrate at F1/F2, consistent with label error
+==============================================================================

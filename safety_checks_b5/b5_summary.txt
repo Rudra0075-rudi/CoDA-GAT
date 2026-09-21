@@ -1,0 +1,21 @@
+==============================================================================
+CoDA-GAT Block B5 -- Safety Check Report
+==============================================================================
+
+n = 8 LODO sites: all effect sizes and CIs below are UNDERPOWERED / SUGGESTIVE,
+not confirmatory, consistent with the project's own stated 8-site limitation.
+
+CHECK 1 (placebo decomposition): PASS
+  32 cohort/metric/component cells checked; 0 non-zero.
+  Per-cohort/metric detail: safety_checks_b5/placebo_summary.csv
+
+CHECK 2 (internal consistency): PASS
+  Cross-site vs within-site prevalence estimates agree within CI on 100% of fold/metric cells (threshold: 50%).
+  Per-fold/metric detail: safety_checks_b5/consistency_detail.csv
+
+CHECK 3 (order-permutation): Shapley symmetrization required = YES
+  Fraction of placebo draws with |order swing|/|total drop| > 0.2: 0.45
+
+==============================================================================
+B5 GATE: PASS — safe to proceed to B7
+==============================================================================

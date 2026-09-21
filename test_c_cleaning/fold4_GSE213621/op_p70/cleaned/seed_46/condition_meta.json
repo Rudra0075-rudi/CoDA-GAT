@@ -1,0 +1,9 @@
+{
+  "condition": "cleaned",
+  "operating_point": "p70",
+  "n_removed": 91,
+  "n_fit_before": 816,
+  "n_fit_after": 725,
+  "remove_from": "fit",
+  "random_removal_seed": null
+}

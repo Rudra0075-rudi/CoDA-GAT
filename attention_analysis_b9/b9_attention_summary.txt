@@ -1,0 +1,23 @@
+==============================================================================
+CoDA-GAT Block B9 -- Attention Analysis
+==============================================================================
+
+Model: mode='off', 5 seeds averaged per fold, 8 folds.
+
+CROSS-FOLD STABILITY: mean pairwise Spearman correlation of gene-attention rankings across the 8 held-out-cohort folds = 0.938.
+Interpreted as reasonably stable: the model attends to a broadly similar gene set regardless of which cohort is held out.
+
+TOP 15 GENES BY CONSENSUS ATTENTION (mean across folds and seeds):
+FN1, MMP2, TP53, TGFB1, COL1A1, COL1A2, COL3A1, CCL2, LUM, IL1B, THBS2, DCN, CASP3, BCL2, THBS1
+
+PATHWAY ENRICHMENT among top genes (one-sided Fisher's exact vs. panel background):
+  ECM_remodeling: 8/15 of top genes vs 20/72 of panel  (p=0.018)  <-- classical fibrosis pathway
+  Apoptosis_stress: 3/15 of top genes vs 11/72 of panel  (p=0.412)
+  Inflammation: 2/15 of top genes vs 10/72 of panel  (p=0.668)
+  TGFB_signaling: 2/15 of top genes vs 10/72 of panel  (p=0.668)  <-- classical fibrosis pathway
+  HSC_activation: 1/15 of top genes vs 11/72 of panel  (p=0.939)  <-- classical fibrosis pathway
+  Hepatocyte_function: 0/15 of top genes vs 12/72 of panel  (p=1.000)
+
+n=8 folds: the stability estimate above is descriptive, not a hypothesis
+test -- no formal inferential claim is made about it.
+==============================================================================

@@ -1,0 +1,27 @@
+Adjacency test on consensus failures
+============================================================
+
+>= 80% of models wrong  (n=138 consensus failures)
+  stage distribution (consensus failure vs rest):
+                F0   F1   F2   F3  F4
+    flagged     39   26   56   17   0
+    unflagged  254  153  235  240  44
+  2x5 chi-square: chi2=26.315, p=2.734e-05
+  2x2 Fisher (adjacent ['F1', 'F2'] vs distant, one-sided): OR=2.030, p=8.411e-05
+
+>= 90% of models wrong  (n=108 consensus failures)
+  stage distribution (consensus failure vs rest):
+                F0   F1   F2   F3  F4
+    flagged     31   18   47   12   0
+    unflagged  262  161  244  245  44
+  2x5 chi-square: chi2=24.988, p=5.06e-05
+  2x2 Fisher (adjacent ['F1', 'F2'] vs distant, one-sided): OR=2.057, p=0.0003108
+
+>= 100% of models wrong  (n=57 consensus failures)
+  stage distribution (consensus failure vs rest):
+                F0   F1   F2   F3  F4
+    flagged     18    7   24    8   0
+    unflagged  275  172  267  249  44
+  2x5 chi-square: chi2=10.934, p=0.02731
+  2x2 Fisher (adjacent ['F1', 'F2'] vs distant, one-sided): OR=1.543, p=0.07272
+

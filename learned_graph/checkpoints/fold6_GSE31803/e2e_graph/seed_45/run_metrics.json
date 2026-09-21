@@ -1,0 +1,9 @@
+{
+  "variant": "e2e_graph",
+  "fold": 6,
+  "seed": 45,
+  "best_val_f1": 0.7470238095238095,
+  "auc": 0.9,
+  "macro_f1": 0.5737627279185413,
+  "balanced_acc": 0.6125
+}

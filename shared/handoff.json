@@ -1,0 +1,130 @@
+{
+  "generated": "2026-08-05T14:51:41",
+  "n_supervised": 1366,
+  "n_healthy": 148,
+  "n_genes": 10735,
+  "n_panel": 72,
+  "n_edges_undirected": 321,
+  "n_folds": 8,
+  "t1_cohorts": [
+    "GSE130970",
+    "GSE135251",
+    "GSE162694",
+    "GSE193066",
+    "GSE213621",
+    "GSE240729",
+    "GSE31803",
+    "GSE84044"
+  ],
+  "t2_cohorts": [
+    "GSE207310",
+    "GSE276114",
+    "GSE48452",
+    "GSE89632"
+  ],
+  "external": [
+    "GSE163211"
+  ],
+  "task_primary": "y_T1_significant",
+  "calibration_mode": "V1",
+  "features": {
+    "A": 8,
+    "B": 9,
+    "C": 9,
+    "total": 26
+  },
+  "head3": {
+    "arms": {
+      "off": {
+        "enabled": false,
+        "variant": null,
+        "a2": 0.0
+      },
+      "directional": {
+        "enabled": true,
+        "variant": "directional",
+        "a2": 0.3
+      },
+      "directional_ps": {
+        "enabled": true,
+        "variant": "directional_ps",
+        "a2": 0.3
+      }
+    },
+    "default_arm": "directional",
+    "decision": "deferred_to_ablation_row_B",
+    "rationale": "Gate criterion f0_vs_healthy is unsound: control samples in GSE48452 (bariatric surgery), GSE89632 (obesity-matched) and GSE162694 (normal-histology NAFLD) are not healthy donor liver. Head 3 is therefore selected empirically via held-out coverage, not by a preprocessing gate.",
+    "t1_readout": {
+      "directional": {
+        "rho": 0.4433945658200469,
+        "p_rho": 7.411259231698295e-40,
+        "f4_minus_f0_sd": 1.819443520616938,
+        "cohort_ratio": 0.502643374453814
+      },
+      "directional_ps": {
+        "rho": 0.46555930925987266,
+        "p_rho": 2.8064060639073033e-44,
+        "f4_minus_f0_sd": 2.0091090386080275,
+        "cohort_ratio": 0.014650142374998506
+      }
+    }
+  },
+  "fold_label_shift": [
+    {
+      "fold": 0,
+      "test_cohort": "GSE130970",
+      "JS_test_vs_cal": 0.05247406559028256,
+      "JS_test_vs_train": 0.04967409821111095
+    },
+    {
+      "fold": 1,
+      "test_cohort": "GSE135251",
+      "JS_test_vs_cal": 0.020392610155260844,
+      "JS_test_vs_train": 6.804430583620766e-05
+    },
+    {
+      "fold": 2,
+      "test_cohort": "GSE162694",
+      "JS_test_vs_cal": 0.022132584312441944,
+      "JS_test_vs_train": 0.01816528103742853
+    },
+    {
+      "fold": 3,
+      "test_cohort": "GSE193066",
+      "JS_test_vs_cal": 0.0051437415090067745,
+      "JS_test_vs_train": 0.0033113742753845855
+    },
+    {
+      "fold": 4,
+      "test_cohort": "GSE213621",
+      "JS_test_vs_cal": 0.003188479759764655,
+      "JS_test_vs_train": 0.01633163283254458
+    },
+    {
+      "fold": 5,
+      "test_cohort": "GSE240729",
+      "JS_test_vs_cal": 0.020399425225868552,
+      "JS_test_vs_train": 0.001269169024844639
+    },
+    {
+      "fold": 6,
+      "test_cohort": "GSE31803",
+      "JS_test_vs_cal": 0.0016341652693798552,
+      "JS_test_vs_train": 0.01365922067213772
+    },
+    {
+      "fold": 7,
+      "test_cohort": "GSE84044",
+      "JS_test_vs_cal": 0.02209995211853906,
+      "JS_test_vs_train": 0.007156477508470815
+    }
+  ],
+  "notes": [
+    "Group C must be recomputed inside each fold; never precompute.",
+    "Augmentation: proper_train only. Never calibration, never test.",
+    "GSE163211 (NanoString) stays outside the pipeline entirely.",
+    "Head 3 is a 3-arm ablation, not a fixed setting.",
+    "GSE213621 lacks ALB/APOA1/APOB/FGA/FGB \u2014 annotation gap, footnote it.",
+    "Two cohorts (GSE31803, GSE213621 partial) are grouped-label: usable for T1/T3, excluded from the ordinal task."
+  ]
+}

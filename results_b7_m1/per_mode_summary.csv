@@ -1,0 +1,2 @@
+mode,auc_mean_mean,auc_mean_std,macro_f1_mean_mean,macro_f1_mean_std,balanced_acc_mean_mean,balanced_acc_mean_std,prevalence_slope_macro_f1_mean_mean,prevalence_slope_macro_f1_mean_std
+off,0.824983259913714,0.02809250663882844,0.7114784171794708,0.037361261578513355,0.7253963174747717,0.02028085433945759,0.010262691780706237,0.15058630149289295

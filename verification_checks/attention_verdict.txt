@@ -1,0 +1,48 @@
+==============================================================================
+CHECK 2 -- IS ATTENTION A RE-DESCRIPTION OF UNIVARIATE EFFECT SIZE?
+==============================================================================
+
+Effect sizes come from each fold's TRAINING SPLIT ONLY (asserted in code).
+Cohen's d was already available as fold-fitted Group C feature 21 and is reused,
+with an independent recomputation from expression_z as a cross-check.
+
+PER-FOLD RESULTS (descriptive; n=8 folds):
+  fold 0: rho=+0.229 [-0.013, +0.434]  top-15 overlap=7/15
+  fold 1: rho=+0.324 [+0.102, +0.520]  top-15 overlap=7/15
+  fold 2: rho=+0.369 [+0.150, +0.563]  top-15 overlap=8/15
+  fold 3: rho=+0.286 [+0.058, +0.491]  top-15 overlap=6/15
+  fold 4: rho=+0.266 [+0.029, +0.478]  top-15 overlap=7/15
+  fold 5: rho=+0.301 [+0.084, +0.513]  top-15 overlap=7/15
+  fold 6: rho=+0.350 [+0.098, +0.556]  top-15 overlap=6/15
+  fold 7: rho=+0.391 [+0.170, +0.589]  top-15 overlap=8/15
+
+POOLED: mean Spearman rho = +0.315 (across-fold 2.5-97.5 pct [+0.236, +0.387]); mean top-15 overlap = 7.0/15
+
+SECOND ANGLE:
+  attention_vs_cohens_d_recomputed: mean rho = +0.315
+  attention_vs_logreg_abs_coef: mean rho = +0.047
+  cohens_d_groupC_vs_recomputed: mean rho = +1.000
+
+PATHWAY ENRICHMENT -- does it survive a plain univariate ranking?
+  top-15 by ATTENTION:
+    ECM_remodeling            8/15  OR=4.29  p=0.018
+    Apoptosis_stress          3/15  OR=1.53  p=0.4121
+    Inflammation              2/15  OR=0.94  p=0.6678
+    TGFB_signaling            2/15  OR=0.94  p=0.6678
+    HSC_activation            1/15  OR=0.34  p=0.939
+    Hepatocyte_function       0/15  OR=0.00  p=1
+  top-15 by |COHEN'S D|:
+    ECM_remodeling           10/15  OR=9.40  p=0.0004574
+    Inflammation              2/15  OR=0.94  p=0.6678
+    Apoptosis_stress          2/15  OR=0.82  p=0.7246
+    HSC_activation            2/15  OR=0.82  p=0.7246
+    TGFB_signaling            1/15  OR=0.38  p=0.9195
+    Hepatocyte_function       0/15  OR=0.00  p=1
+
+  ECM_remodeling: attention p=0.018 vs |Cohen's d| p=0.0004574.
+  The enrichment is reproduced by a plain univariate ranking, so it is NOT attention-specific and must not be presented as such.
+
+DECISION RULE APPLIED (rho <= 0.5):
+
+Attention is substantially independent of univariate effect size (Spearman rho = 0.315), so the interpretability claim stands as stated: the attended gene set is not simply the top of a univariate screen.
+

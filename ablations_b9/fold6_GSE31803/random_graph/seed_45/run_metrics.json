@@ -1,0 +1,9 @@
+{
+  "fold": 6,
+  "ablation": "random_graph",
+  "seed": 45,
+  "auc": 0.8695312500000001,
+  "macro_f1": 0.6302521008403361,
+  "balanced_acc": 0.65625,
+  "best_val_f1": 0.7493797418287729
+}

@@ -1,0 +1,44 @@
+{
+  "fold": 2,
+  "test_cohort": "GSE162694",
+  "calibration_source": "cohort:GSE193066",
+  "shapes": {
+    "train": [
+      1109,
+      72,
+      26
+    ],
+    "calibration": [
+      106,
+      72,
+      26
+    ],
+    "test": [
+      112,
+      72,
+      26
+    ]
+  },
+  "positive_rate": {
+    "train": 0.5779981965734896,
+    "calibration": 0.5943396226415094,
+    "test": 0.41964285714285715
+  },
+  "train_cohorts": [
+    "GSE130970",
+    "GSE135251",
+    "GSE207310",
+    "GSE213621",
+    "GSE240729",
+    "GSE276114",
+    "GSE31803",
+    "GSE48452",
+    "GSE84044",
+    "GSE89632"
+  ],
+  "rules": [
+    "augmentation applies to train/ ONLY",
+    "calibration/ and test/ are raw and must remain raw",
+    "features 17-25 (Group C) are already fitted on THIS fold's train"
+  ]
+}

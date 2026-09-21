@@ -1,0 +1,28 @@
+==============================================================================
+Test C: The Cleaning Experiment
+==============================================================================
+
+IN-SAMPLE CAVEAT: Tests A/B validated the flagging rule on HELD-OUT predictions.
+Here the identical rule (no retuning) is applied to TRAINING-split predictions,
+which are in-sample -- the model was fit to those labels. A flagged training sample
+is one the model refused to memorise despite training on it. The achieved training
+flagging rate therefore need NOT match Test B's 18.3% held-out rate; realised rates
+are in train_flags/ and were printed at run time, as observed.
+
+n = 8 folds: p-floor 0.008, MDE ~1.15 sigma_d. Everything below is DESCRIPTIVE with
+fold-level intervals, not a confirmatory significance test.
+
+PRIMARY operating point p70, metric macro_f1:
+  CLEANED vs BASELINE: mean delta=+0.0113 (sd=0.0296, range -0.0325 to +0.0669), 5/8 folds improved, Wilcoxon p=0.4609
+  RANDOM  vs BASELINE: mean delta=-0.0043 (sd=0.0207, range -0.0355 to +0.0273), 3/8 folds improved, Wilcoxon p=0.5469
+  CLEANED vs RANDOM  : mean delta=+0.0156 (sd=0.0364), 5/8 folds favour cleaned, Wilcoxon p=0.3125
+
+TEST C: cleaning HELD performance (consistent with label error -- removing them cost nothing)
+
+CONTROL INTERPRETATION (the verdict is only meaningful relative to this):
+  Removing the FLAGGED samples beat removing an equal number of RANDOM samples by +0.0156 macro_f1 on average -- the flagged set is specifically informative, not just 'any N rows'.
+  Random removal alone moved macro_f1 by -0.0043; if that is comparable to the cleaned delta, 'removing any N samples helps' is not excluded.
+
+Per-fold deltas: per_fold_deltas.json  |  all comparisons: comparison_table.csv
+Conformal coverage (does cleaning change calibration as well as accuracy?): conformal_coverage_comparison.csv
+==============================================================================

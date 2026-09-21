@@ -1,0 +1,9 @@
+{
+  "control": "shuffled_graph",
+  "fold": 0,
+  "seed": 43,
+  "best_val_f1": 0.7183626875407698,
+  "auc": 0.8,
+  "macro_f1": 0.6703296703296704,
+  "balanced_acc": 0.7113207547169811
+}
