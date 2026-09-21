@@ -1,0 +1,123 @@
+==============================================================================
+CHECK 1 -- APS CONFORMAL DIAGNOSTIC
+==============================================================================
+
+IMPLEMENTATION AS WRITTEN (run_full_experiment_b7.py):
+  LAC score      : 1 - p(true class)
+  LAC set        : {c : p(c) >= 1 - q_hat}
+  APS score      : cumulative mass of all classes at least as likely as the
+                   true class -- i.e. the NON-randomized variant. The standard
+                   randomization term U * p(true) is absent.
+  APS set        : smallest top-k prefix whose cumulative mass reaches q_hat
+  quantile level : k = ceil((1 - alpha) * (n + 1)); q_hat = k-th smallest score
+
+EVIDENCE
+------------------------------------------------------------------------------
+A. Score distribution. Across folds/seeds, a mean 29.5% of calibration APS
+   scores are exactly 1.0. That is a POINT MASS, and its weight equals the
+   model's calibration mis-ranking rate.
+   Every alpha tested (0.05, 0.1, 0.2) is BELOW that mass
+   in 116/120 (fold, seed, alpha) cells,
+   so the (1-alpha) quantile lands inside the atom.
+
+B. K=2 structure. With two classes the non-randomized score can only be p_max
+   (true class ranked first) or exactly 1.0 (true class ranked second). The
+   randomization term U * p(true) that would spread the 1.0 atom into a
+   continuum is ABSENT from the b7 implementation.
+
+C. Quantile level. k = ceil((1-alpha)(n+1)) is CORRECT as written -- this is not
+   an off-by-one in the level. There IS a latent off-by-one in the guard
+   'if k >= n: return inf' (it should be 'k > n'), but it fires in
+   0/120 cells, so it is NOT the cause.
+
+D. Set-size consistency. Original APS mean set size is
+   1.910-2.000
+   against 2 possible classes, with coverage
+   1.000-1.000.
+   Coverage and set size AGREE: the sets really are (essentially always) full,
+   so the 1.000 is real rather than a coverage-computation bug. The handful of
+   runs slightly below 2.0 come from float32 cumsum making q_hat 0.99999994
+   instead of exactly 1.0 at alpha=0.20 -- a precision artifact, not information.
+
+   LAC over the same runs: coverage
+   0.603-1.000, set size
+   0.910-1.927 -- behaving as
+   intended, which localises the fault to APS specifically.
+
+VERDICT
+------------------------------------------------------------------------------
+APS BUG IDENTIFIED: the randomization term is omitted.
+
+The b7 docstring describes the non-randomized variant as 'slightly conservative'.
+That characterisation is wrong for a binary task and it propagated into the
+write-up: for K=2 the omission is not conservative but DEGENERATE. The score
+collapses onto {p_max} union {1.0}, the atom at 1.0 carries the mis-ranking rate
+(~30% here), and for any alpha below that rate q_hat is pinned at 1.0, which
+forces the full label set every time. Coverage 1.000 is therefore arithmetically
+guaranteed and carries no information.
+
+CORRECTED NUMBERS (randomized APS, computed from the SAME saved calibration and
+test probabilities; originals untouched and shown alongside):
+
+   alpha  orig cov  orig size  corr cov  corr size  empty sets
+    0.05     1.000      2.000     0.951      1.787         0.1
+     0.1     1.000      2.000     0.900      1.574         0.5
+     0.2     1.000      1.996     0.804      1.275         3.2
+
+Randomized APS can legitimately emit the empty set; the count is reported above
+so it is not mistaken for a new bug.
+
+Recommended wording: the previously reported APS coverage of 1.000 was an artifact
+of a non-randomized APS score on a two-class problem, not a property of the model.
+Either report the corrected randomized-APS numbers above, or report LAC only and
+state that APS was excluded for this reason. Do not report the 1.000 as a result.
+
+
+==============================================================================
+CHECK 2 -- IS ATTENTION A RE-DESCRIPTION OF UNIVARIATE EFFECT SIZE?
+==============================================================================
+
+Effect sizes come from each fold's TRAINING SPLIT ONLY (asserted in code).
+Cohen's d was already available as fold-fitted Group C feature 21 and is reused,
+with an independent recomputation from expression_z as a cross-check.
+
+PER-FOLD RESULTS (descriptive; n=8 folds):
+  fold 0: rho=+0.229 [-0.013, +0.434]  top-15 overlap=7/15
+  fold 1: rho=+0.324 [+0.102, +0.520]  top-15 overlap=7/15
+  fold 2: rho=+0.369 [+0.150, +0.563]  top-15 overlap=8/15
+  fold 3: rho=+0.286 [+0.058, +0.491]  top-15 overlap=6/15
+  fold 4: rho=+0.266 [+0.029, +0.478]  top-15 overlap=7/15
+  fold 5: rho=+0.301 [+0.084, +0.513]  top-15 overlap=7/15
+  fold 6: rho=+0.350 [+0.098, +0.556]  top-15 overlap=6/15
+  fold 7: rho=+0.391 [+0.170, +0.589]  top-15 overlap=8/15
+
+POOLED: mean Spearman rho = +0.315 (across-fold 2.5-97.5 pct [+0.236, +0.387]); mean top-15 overlap = 7.0/15
+
+SECOND ANGLE:
+  attention_vs_cohens_d_recomputed: mean rho = +0.315
+  attention_vs_logreg_abs_coef: mean rho = +0.047
+  cohens_d_groupC_vs_recomputed: mean rho = +1.000
+
+PATHWAY ENRICHMENT -- does it survive a plain univariate ranking?
+  top-15 by ATTENTION:
+    ECM_remodeling            8/15  OR=4.29  p=0.018
+    Apoptosis_stress          3/15  OR=1.53  p=0.4121
+    Inflammation              2/15  OR=0.94  p=0.6678
+    TGFB_signaling            2/15  OR=0.94  p=0.6678
+    HSC_activation            1/15  OR=0.34  p=0.939
+    Hepatocyte_function       0/15  OR=0.00  p=1
+  top-15 by |COHEN'S D|:
+    ECM_remodeling           10/15  OR=9.40  p=0.0004574
+    Inflammation              2/15  OR=0.94  p=0.6678
+    Apoptosis_stress          2/15  OR=0.82  p=0.7246
+    HSC_activation            2/15  OR=0.82  p=0.7246
+    TGFB_signaling            1/15  OR=0.38  p=0.9195
+    Hepatocyte_function       0/15  OR=0.00  p=1
+
+  ECM_remodeling: attention p=0.018 vs |Cohen's d| p=0.0004574.
+  The enrichment is reproduced by a plain univariate ranking, so it is NOT attention-specific and must not be presented as such.
+
+DECISION RULE APPLIED (rho <= 0.5):
+
+Attention is substantially independent of univariate effect size (Spearman rho = 0.315), so the interpretability claim stands as stated: the attended gene set is not simply the top of a univariate screen.
+

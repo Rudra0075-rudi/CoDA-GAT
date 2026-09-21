@@ -1,0 +1,36 @@
+==============================================================================
+Graph Utility Analysis
+==============================================================================
+
+The accuracy finding is unchanged and not revisited: shuffled/random/empty
+graphs tie or slightly beat the real graph on AUC. This analysis asks only
+whether the graph contributes on OTHER axes, each against a matched control.
+
+Power: cross-fold statements (n=8) are DESCRIPTIVE and underpowered.
+Sample-level statements (n~1,064 held-out samples) are adequately powered.
+Masking results are averaged over >=20 random gene subsets per rate, with the
+same subsets reused across models so comparisons are paired at the draw level.
+
+TEST 3 (embeddings/calibration): the graph DOES NOT produce more cohort-invariant embeddings; DOES NOT give better-calibrated uncertainty.
+  cohort-invariance metrics favouring the real graph: 1/2 (lower cohort separability = more invariant; measured on IN-SAMPLE train embeddings)
+  conformal |coverage gap| comparisons favouring the real graph: 2/6 across alpha in [0.05, 0.1, 0.2] x (LAC, APS)
+    cohort_pred_acc_train_insample: real=0.2970 empty=0.2716 delta=+0.0255 p=0.007812
+    cohort_silhouette_train_insample: real=-0.1947 empty=-0.1751 delta=-0.0196 p=0.007812
+    stage_silhouette_oos: real=-0.1175 empty=-0.1047 delta=-0.0128 p=0.07812
+    etiology_silhouette_oos: real=0.0483 empty=0.0255 delta=+0.0227 p=0.625
+    lac_a0.05_abs_coverage_gap: real=0.0299 empty=0.0361 delta=-0.0062 p=0.1953
+    lac_a0.05_mean_set_size: real=1.6816 empty=1.6570 delta=+0.0245 p=0.25
+    aps_a0.05_abs_coverage_gap: real=0.0500 empty=0.0500 delta=+0.0000 p=1
+    aps_a0.05_mean_set_size: real=2.0000 empty=2.0000 delta=+0.0000 p=1
+    lac_a0.1_abs_coverage_gap: real=0.0502 empty=0.0513 delta=-0.0011 p=1
+    lac_a0.1_mean_set_size: real=1.4541 empty=1.4432 delta=+0.0108 p=0.5781
+    aps_a0.1_abs_coverage_gap: real=0.1000 empty=0.1000 delta=+0.0000 p=1
+    aps_a0.1_mean_set_size: real=2.0000 empty=2.0000 delta=+0.0000 p=1
+    lac_a0.2_abs_coverage_gap: real=0.0685 empty=0.0567 delta=+0.0118 p=0.4609
+    lac_a0.2_mean_set_size: real=1.2005 empty=1.1898 delta=+0.0106 p=1
+    aps_a0.2_abs_coverage_gap: real=0.2000 empty=0.2000 delta=+0.0000 p=1
+    aps_a0.2_mean_set_size: real=1.9959 empty=1.9933 delta=+0.0026 p=1
+
+OVERALL: the graph contributes NOTHING on any axis tested -- robustness, edge interpretability and embedding/calibration quality all fail to separate it from its matched controls. Reported at face value.
+
+==============================================================================

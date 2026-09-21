@@ -1,0 +1,9 @@
+{
+  "fold": 2,
+  "ablation": "no_pathway_features",
+  "seed": 46,
+  "auc": 0.7757774140752864,
+  "macro_f1": 0.6636090591768813,
+  "balanced_acc": 0.70949263502455,
+  "best_val_f1": 0.7867177522349935
+}

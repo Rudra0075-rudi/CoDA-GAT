@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# Python bytecode -- regenerated on import, never source
+__pycache__/
+*.py[cod]

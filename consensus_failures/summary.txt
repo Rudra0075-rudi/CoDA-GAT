@@ -1,0 +1,37 @@
+==============================================================================
+Consensus-Failure Analysis (kappa-free line of evidence)
+==============================================================================
+
+CONFOUND, STATED UP FRONT: models can agree on their errors simply because they
+share input features. Agreement magnitude alone therefore cannot support a
+label-error reading. The adjacency test (Step 5) is what discriminates: consensus
+failures concentrated at F1/F2 point at the labels; failures scattered across
+F0/F3/F4 point at shared-input correlation or genuinely hard cases.
+
+MODELS INCLUDED (23): codagat_off, codagat_marginal, codagat_conditional, shuffled_graph, random_graph, empty_graph, no_h3_deviation, no_pathway_features, no_fold_fitted_features, bulk_top1000__logreg, bulk_top1000__random_forest, bulk_top1000__xgboost, bulk_top1000__catboost, panel72_combined__logreg, panel72_combined__random_forest, panel72_combined__xgboost, panel72_combined__catboost, panel72_full__logreg, panel72_full__random_forest, panel72_full__xgboost, panel72_full__catboost, boruta_lasso_random_forest, boruta_lasso_xgboost
+architecture families present: ['gat', 'linear', 'tree_ensemble']
+
+MODELS EXCLUDED (4) -- no per-sample predictions found on disk. Run the B3 persistence re-run to add them:
+  gat (1): fully_connected
+  gnn_gcn_settransformer (1): knowledgegcn_settransformer
+  gnn_sage (1): graphsage_supcon
+  mlp (1): flattened_mlp
+
+Sample-level tests below use n = 1064 held-out samples and are adequately powered.
+Any fold-level statement (n=8 cohorts) is descriptive and underpowered.
+
+AGREEMENT (observed vs chance; raw agreement alone is not interpretable):
+  mean Jaccard observed 0.513 vs chance 0.165 (excess +0.348); mean MCC 0.539
+  chance null = within-fold permutation (preserves each model's per-fold error rate,
+  so cohort difficulty differences are not counted as agreement).
+
+  variant_group between: observed 0.498, excess +0.332, z=22.2 (225 pairs)
+  variant_group within: observed 0.640, excess +0.474, z=31.4 (28 pairs)
+
+ADJACENCY TEST at >=80% consensus (n=138 consensus failures):
+  Fisher one-sided OR=2.030, p=8.411e-05
+
+CONVERGENT FAILURE: SUPPORTED -- consensus failures enrich at F1/F2 (OR=2.03, p=8.41e-05), consistent with
+label error independently of the kappa inversion.
+
+==============================================================================

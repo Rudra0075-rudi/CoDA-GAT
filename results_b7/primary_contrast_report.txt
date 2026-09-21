@@ -1,0 +1,17 @@
+==============================================================================
+B7 PRIMARY CONTRAST (pre-registered in preregistration_b6.md)
+==============================================================================
+
+PRIMARY (marginal vs off, macro_f1, paired across folds):
+  marginal vs off: n=8 folds, mean diff=+0.0009, Wilcoxon p=0.7422 (n=8 floor=0.008), direction=PASS-direction (ON > OFF) -> NULL
+
+Reminder: n=8 is underpowered (min detectable effect ~1.15 sigma_d).
+A PASS or NULL here is reported at face value, not re-litigated by the
+descriptive contrasts below.
+
+DESCRIPTIVE ONLY (not the pre-registered primary test):
+  conditional vs off: n=8 folds, mean diff=+0.0095, Wilcoxon p=0.4609 (n=8 floor=0.008), direction=PASS-direction (ON > OFF) -> NULL
+
+  conditional vs marginal: n=8 folds, mean diff=+0.0087, Wilcoxon p=0.5469 (n=8 floor=0.008), direction=PASS-direction (ON > OFF) -> NULL
+
+==============================================================================

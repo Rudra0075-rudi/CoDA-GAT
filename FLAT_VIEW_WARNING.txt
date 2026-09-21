@@ -1,0 +1,8 @@
+The top-level train/ calibration/ test/ folders are a COPY of
+folds/fold0_GSE130970/ and exist only for quick
+inspection.
+
+They are NOT the evaluation protocol. Evaluation is leave-one-dataset-out
+across all 8 folds in folds/. Reporting results from this single
+split alone would collapse eight independent measurements into one and
+invalidate the label-shift analysis.

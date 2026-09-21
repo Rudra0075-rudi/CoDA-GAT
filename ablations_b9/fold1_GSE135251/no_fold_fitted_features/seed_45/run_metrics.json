@@ -1,0 +1,9 @@
+{
+  "fold": 1,
+  "ablation": "no_fold_fitted_features",
+  "seed": 45,
+  "auc": 0.8032085561497327,
+  "macro_f1": 0.7169976270763082,
+  "balanced_acc": 0.7132231404958678,
+  "best_val_f1": 0.7338935574229692
+}

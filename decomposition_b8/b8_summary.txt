@@ -1,0 +1,91 @@
+==============================================================================
+CoDA-GAT Block B8 -- Degradation Decomposition
+==============================================================================
+
+Model: adversary mode = 'off', predictions averaged across seeds [42, 43, 44, 45, 46].
+Decomposition function: decompose_drop() from safety_checks_b5.py, UNCHANGED --
+the exact estimator B5 validated (placebo components ~0; cross-site vs
+within-site prevalence estimates agreed on 100% of fold/metric cells).
+
+n = 8 LODO folds: every number below is UNDERPOWERED / SUGGESTIVE, not
+confirmatory, consistent with the project's stated 8-site limitation.
+
+Components are COUNTERFACTUAL CONTRASTS (e.g. 'reweighting test to
+calibration prevalence changes macro-F1 by X'), never percentages of a
+total drop -- Check 3 in B5 found order-swings exceeding 20% of the total
+drop on 45% of draws, so 'total' is not a stable enough reference to divide by.
+
+------------------------------------------------------------------------------
+METRIC: macro_f1  (Shapley-symmetrized: average of both component orderings)
+------------------------------------------------------------------------------
+  fold 0 (GSE135251 -> GSE130970): total gap=+0.2114  prevalence=+0.0606 [+0.0228, +0.1104]  residual=+0.1508 [+0.0287, +0.2667]
+  fold 1 (GSE162694 -> GSE135251): total gap=-0.1238  prevalence=-0.0314 [-0.0658, -0.0099]  residual=-0.0924 [-0.1902, +0.0179]
+  fold 2 (GSE193066 -> GSE162694): total gap=+0.0841  prevalence=+0.0212 [-0.0030, +0.0479]  residual=+0.0629 [-0.0422, +0.1589]
+  fold 3 (GSE213621 -> GSE193066): total gap=-0.0429  prevalence=-0.0186 [-0.0402, +0.0086]  residual=-0.0243 [-0.1161, +0.0694]
+      note: GSE213621 carries grouped (non-exact) fibrosis-stage labels for some samples. This does NOT affect the T1 (significant fibrosis) label used here, which is always exactly defined -- but it would limit any future ORDINAL-stage decomposition to a set-identified marginal, per the project's known-issues list.
+  fold 4 (GSE240729 -> GSE213621): total gap=-0.0451  prevalence=+0.0093 [-0.0129, +0.0338]  residual=-0.0544 [-0.1591, +0.0643]
+      note: GSE213621 carries grouped (non-exact) fibrosis-stage labels for some samples. This does NOT affect the T1 (significant fibrosis) label used here, which is always exactly defined -- but it would limit any future ORDINAL-stage decomposition to a set-identified marginal, per the project's known-issues list.
+  fold 5 (GSE31803 -> GSE240729): total gap=+0.0767  prevalence=+0.0083 [-0.0152, +0.0508]  residual=+0.0683 [-0.0908, +0.2266]
+      note: GSE31803 carries grouped (non-exact) fibrosis-stage labels for some samples. This does NOT affect the T1 (significant fibrosis) label used here, which is always exactly defined -- but it would limit any future ORDINAL-stage decomposition to a set-identified marginal, per the project's known-issues list.
+  fold 6 (GSE84044 -> GSE31803): total gap=-0.0859  prevalence=-0.0086 [-0.0422, +0.0231]  residual=-0.0773 [-0.2193, +0.0507]
+      note: GSE31803 carries grouped (non-exact) fibrosis-stage labels for some samples. This does NOT affect the T1 (significant fibrosis) label used here, which is always exactly defined -- but it would limit any future ORDINAL-stage decomposition to a set-identified marginal, per the project's known-issues list.
+  fold 7 (GSE130970 -> GSE84044): total gap=-0.1001  prevalence=-0.0124 [-0.0432, +0.0083]  residual=-0.0877 [-0.2416, +0.0489]
+
+  ACROSS 8 FOLDS -- prevalence component: mean=+0.0036  [-0.0137, +0.0229] (fold-bootstrap CI, n=8, coarse)
+  ACROSS 8 FOLDS -- residual component:   mean=-0.0067  [-0.0613, +0.0553] (fold-bootstrap CI, n=8, coarse)
+
+------------------------------------------------------------------------------
+METRIC: balanced_acc  (Shapley-symmetrized: average of both component orderings)
+------------------------------------------------------------------------------
+  fold 0 (GSE135251 -> GSE130970): total gap=+0.1339  prevalence=+0.0024 [-0.0089, +0.0108]  residual=+0.1316 [+0.0106, +0.2402]
+  fold 1 (GSE162694 -> GSE135251): total gap=-0.0692  prevalence=+0.0028 [-0.0096, +0.0073]  residual=-0.0721 [-0.1589, +0.0301]
+  fold 2 (GSE193066 -> GSE162694): total gap=+0.0490  prevalence=-0.0004 [-0.0101, +0.0105]  residual=+0.0493 [-0.0550, +0.1514]
+  fold 3 (GSE213621 -> GSE193066): total gap=-0.0420  prevalence=+0.0001 [-0.0090, +0.0101]  residual=-0.0421 [-0.1278, +0.0573]
+      note: GSE213621 carries grouped (non-exact) fibrosis-stage labels for some samples. This does NOT affect the T1 (significant fibrosis) label used here, which is always exactly defined -- but it would limit any future ORDINAL-stage decomposition to a set-identified marginal, per the project's known-issues list.
+  fold 4 (GSE240729 -> GSE213621): total gap=-0.0443  prevalence=-0.0032 [-0.0122, +0.0137]  residual=-0.0411 [-0.1533, +0.0863]
+      note: GSE213621 carries grouped (non-exact) fibrosis-stage labels for some samples. This does NOT affect the T1 (significant fibrosis) label used here, which is always exactly defined -- but it would limit any future ORDINAL-stage decomposition to a set-identified marginal, per the project's known-issues list.
+  fold 5 (GSE31803 -> GSE240729): total gap=+0.0686  prevalence=+0.0005 [-0.0109, +0.0107]  residual=+0.0681 [-0.0909, +0.2242]
+      note: GSE31803 carries grouped (non-exact) fibrosis-stage labels for some samples. This does NOT affect the T1 (significant fibrosis) label used here, which is always exactly defined -- but it would limit any future ORDINAL-stage decomposition to a set-identified marginal, per the project's known-issues list.
+  fold 6 (GSE84044 -> GSE31803): total gap=-0.0693  prevalence=+0.0000 [-0.0100, +0.0111]  residual=-0.0693 [-0.2015, +0.0416]
+      note: GSE31803 carries grouped (non-exact) fibrosis-stage labels for some samples. This does NOT affect the T1 (significant fibrosis) label used here, which is always exactly defined -- but it would limit any future ORDINAL-stage decomposition to a set-identified marginal, per the project's known-issues list.
+  fold 7 (GSE130970 -> GSE84044): total gap=-0.0479  prevalence=-0.0003 [-0.0112, +0.0118]  residual=-0.0476 [-0.1713, +0.0792]
+
+  ACROSS 8 FOLDS -- prevalence component: mean=+0.0002  [-0.0010, +0.0014] (fold-bootstrap CI, n=8, coarse)
+  ACROSS 8 FOLDS -- residual component:   mean=-0.0029  [-0.0493, +0.0487] (fold-bootstrap CI, n=8, coarse)
+
+------------------------------------------------------------------------------
+AUC (undecomposed -- decompose_drop() bootstraps binarized predictions, so
+it cannot correctly decompose a continuous-score metric like AUC without
+being modified, which the spec's 'do not write a new version' rule forbids.
+Reported here as a plain calibration-minus-test gap, descriptive only.)
+------------------------------------------------------------------------------
+  fold 0 (GSE135251 -> GSE130970): AUC gap=+0.0179
+  fold 1 (GSE162694 -> GSE135251): AUC gap=-0.0647
+  fold 2 (GSE193066 -> GSE162694): AUC gap=+0.0094
+  fold 3 (GSE213621 -> GSE193066): AUC gap=-0.0198
+  fold 4 (GSE240729 -> GSE213621): AUC gap=+0.0343
+  fold 5 (GSE31803 -> GSE240729): AUC gap=+0.0763
+  fold 6 (GSE84044 -> GSE31803): AUC gap=-0.0863
+  fold 7 (GSE130970 -> GSE84044): AUC gap=-0.0322
+
+------------------------------------------------------------------------------
+INTERACTION / ORDER-DEPENDENCE (Step 5)
+------------------------------------------------------------------------------
+The prevalence x residual interaction is nonzero by construction (the noise
+floor depends on class mix). The Shapley value -- averaging both orderings --
+absorbs this interaction symmetrically into both components. The per-fold
+'order_swing_relative_to_total_gap' column in the detail CSV is exactly the
+magnitude of what a purely additive, single-ordering ledger would have
+misattributed entirely to whichever component was computed first.
+
+==============================================================================
+HEADLINE FINDING
+==============================================================================
+Across the 8 folds, reweighting each test cohort to its calibration cohort's
+prevalence changes macro-F1 by a mean of +0.0036 (fold range: -0.0314 to +0.0606).
+This is the ONLY cleanly attributable component. The residual -- platform,
+population/biology, and annotation differences between cohorts -- is
+explicitly NOT separable further with this data and design; it is reported
+as a single inseparable bundle, per the project's own honesty rule.
+All 8 folds passed the identifiability check for the T1-based metrics used here.
+==============================================================================

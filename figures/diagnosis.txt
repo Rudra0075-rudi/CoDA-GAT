@@ -1,0 +1,349 @@
+==============================================================================
+CoDA-GAT figure diagnosis
+==============================================================================
+Read-only. Every value below is read or recomputed from a file on disk.
+repo: /Users/rudramaitra/Desktop/CoDAGAT_preprocessed_handoff
+
+==============================================================================
+ISSUE A -- baseline per-cohort coverage
+==============================================================================
+A1. What the canonical baseline files contain
+------------------------------------------------------------------------------
+  tabular         bulk_top1000__catboost             folds=[0]  n=1
+  tabular         bulk_top1000__logreg               folds=[0]  n=1
+  tabular         bulk_top1000__random_forest        folds=[0]  n=1
+  tabular         bulk_top1000__xgboost              folds=[0]  n=1
+  tabular         panel72_combined__catboost         folds=[0]  n=1
+  tabular         panel72_combined__logreg           folds=[0]  n=1
+  tabular         panel72_combined__random_forest    folds=[0]  n=1
+  tabular         panel72_combined__xgboost          folds=[0]  n=1
+  tabular         panel72_full__catboost             folds=[0]  n=1
+  tabular         panel72_full__logreg               folds=[0]  n=1
+  tabular         panel72_full__random_forest        folds=[0]  n=1
+  tabular         panel72_full__xgboost              folds=[0]  n=1
+  hybrids         boruta_lasso_random_forest         folds=[0]  n=1
+  hybrids         boruta_lasso_xgboost               folds=[0]  n=1
+  hybrids         graphsage_supcon                   folds=[0]  n=1
+  hybrids         knowledgegcn_settransformer        folds=[0]  n=1
+  graph_controls  empty_graph                        folds=[0]  n=1
+  graph_controls  flattened_mlp                      folds=[0]  n=1
+  graph_controls  fully_connected                    folds=[0]  n=1
+  graph_controls  random_graph                       folds=[0]  n=1
+  graph_controls  real_graph                         folds=[0]  n=1
+  graph_controls  shuffled_graph                     folds=[0]  n=1
+  coverage        <coverage: no model column>        folds=[0]  n=1
+
+  models with more than one fold in the canonical files: 0 / 23
+  The empty auc_std column in baselines/summary_*.csv is the same fact seen from
+  the other side: a standard deviation of a single value is undefined.
+
+A2. Per-sample predictions: cohort coverage
+------------------------------------------------------------------------------
+  boruta_lasso_random_forest         cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  boruta_lasso_xgboost               cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  bulk_top1000__catboost             cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  bulk_top1000__logreg               cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  bulk_top1000__random_forest        cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  bulk_top1000__xgboost              cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  panel72_combined__catboost         cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  panel72_combined__logreg           cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  panel72_combined__random_forest    cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  panel72_combined__xgboost          cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  panel72_full__catboost             cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  panel72_full__logreg               cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  panel72_full__random_forest        cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+  panel72_full__xgboost              cohorts=8  folds=[0, 1, 2, 3, 4, 5, 6, 7]
+
+  total held-out samples covered: 1862 per model across 8 cohorts
+
+A3. Reproduction check -- recomputed vs saved, on the folds both cover
+------------------------------------------------------------------------------
+  vs recomputed_metrics_tabular.csv: 112 rows, max |AUC diff| = 1.11e-16
+  vs canonical all_folds.csv: 14 overlapping rows, max |AUC diff| = 0.00e+00
+  PASS: the per-sample predictions reproduce the saved metrics, so the recomputed
+  8-cohort means below are the same quantity, just measured on all 8 cohorts.
+
+A4. model | cohorts available | reported AUC | recomputed 8-cohort mean +/- std
+------------------------------------------------------------------------------
+                          model  cohorts_available  canonical_n_folds canonical_basis auc_reported auc_8cohort_mean auc_8cohort_std delta_vs_reported
+         panel72_full__catboost                  8                  1       GSE130970       0.8860           0.8416          0.0443           -0.0444
+     panel72_combined__catboost                  8                  1       GSE130970       0.8808           0.8416          0.0492           -0.0392
+           panel72_full__logreg                  8                  1       GSE130970       0.9019           0.8384          0.0382           -0.0635
+       panel72_combined__logreg                  8                  1       GSE130970       0.9019           0.8381          0.0383           -0.0638
+    panel72_full__random_forest                  8                  1       GSE130970       0.8453           0.8371          0.0489           -0.0082
+          panel72_full__xgboost                  8                  1       GSE130970       0.8823           0.8329          0.0568           -0.0493
+         bulk_top1000__catboost                  8                  1       GSE130970       0.8143           0.8314          0.0369           +0.0170
+          bulk_top1000__xgboost                  8                  1       GSE130970       0.8219           0.8304          0.0499           +0.0085
+panel72_combined__random_forest                  8                  1       GSE130970       0.8396           0.8293          0.0416           -0.0104
+      panel72_combined__xgboost                  8                  1       GSE130970       0.8906           0.8288          0.0539           -0.0617
+     boruta_lasso_random_forest                  8                  1       GSE130970       0.8049           0.8220          0.0393           +0.0171
+    bulk_top1000__random_forest                  8                  1       GSE130970       0.8091           0.8214          0.0542           +0.0123
+           boruta_lasso_xgboost                  8                  1       GSE130970       0.7592           0.8001          0.0412           +0.0408
+           bulk_top1000__logreg                  8                  1       GSE130970       0.8558           0.7879          0.0730           -0.0679
+               graphsage_supcon                  0                  1       GSE130970       0.7925                -               -                 -
+    knowledgegcn_settransformer                  0                  1       GSE130970       0.7834                -               -                 -
+                    empty_graph                  0                  1       GSE130970       0.8060                -               -                 -
+                  flattened_mlp                  0                  1       GSE130970       0.8777                -               -                 -
+                fully_connected                  0                  1       GSE130970       0.8355                -               -                 -
+                   random_graph                  0                  1       GSE130970       0.8355                -               -                 -
+                     real_graph                  0                  1       GSE130970       0.8121                -               -                 -
+                 shuffled_graph                  0                  1       GSE130970       0.8385                -               -                 -
+
+  CoDA-GAT (results_b7, mode=off, m=0): 8-cohort mean AUC = 0.8225 +/- 0.0267  (n=8 cohorts)
+
+VERDICT (Issue A)
+------------------------------------------------------------------------------
+  The canonical baseline summaries are SINGLE-COHORT values, not 8-cohort means:
+  every model in baselines/<stage>/all_folds.csv has exactly one fold, and the
+  reported auc_mean is that one cohort's AUC with an undefined std.
+  14 models do have all-8-cohort per-sample
+  predictions, so their true cross-cohort mean is recomputable and is used from here on.
+  8 model(s) have NO per-sample predictions and remain single-cohort:
+    - graphsage_supcon
+    - knowledgegcn_settransformer
+    - empty_graph
+    - flattened_mlp
+    - fully_connected
+    - random_graph
+    - real_graph
+    - shuffled_graph
+  These are marked 'single cohort' in every figure and are never averaged in with
+  8-cohort means.
+
+  NOTE: 8-cohort values for three of the graph controls DO exist elsewhere, in
+  ablations_b9/master_ablation_results.csv (empty_graph, no_fold_fitted_features, no_h3_deviation, no_pathway_features, random_graph, shuffled_graph).
+  Those are B9 runs -- full CoDA-GAT, 5 seeds per fold -- not B3's single-fold
+  control runs. They are a different protocol and are NOT substituted for B3's
+  rows here; they appear in the ablation figures on their own terms.
+
+==============================================================================
+ISSUE B -- masking contradiction
+==============================================================================
+B1. Which file and which columns each artefact used
+------------------------------------------------------------------------------
+  fig11 (make_figures.py, masking_pooled):
+      file    graph_utility/masking_curves.csv
+      columns model, fold, seed, mask_rate, draw, auc
+      recipe  mean over (seed, draw) within each (model, fold, rate), then mean
+              over the 8 folds; band = 1.96 * std / sqrt(8) across folds
+      rows    24240  models=['coexpr_graph', 'e2e_graph', 'empty_graph', 'random_graph', 'real_graph', 'shuffled_graph']
+              rates=[np.float64(0.0), np.float64(0.1), np.float64(0.2), np.float64(0.3), np.float64(0.4), np.float64(0.5)]  seeds=[np.int64(42), np.int64(43), np.int64(44), np.int64(45), np.int64(46)]
+  graph_utility/masking_curves_pooled.csv is that same recipe, saved by
+  graph_utility.py itself -- so the figure and the saved pooled file agree by
+  construction. Verified below.
+      check   18 rows, max |auc_mean - recomputed| = 1.11e-16  -> the figure's recipe is the saved file's recipe
+
+B2. What graph_utility/summary.txt actually contains
+------------------------------------------------------------------------------
+  graph_utility/summary.txt: 36 lines
+  sections present: ['TEST 3 (embeddings/calibration): the graph DOES NOT produce more cohort-invariant embeddings; DOES NOT give better-calibrated uncertainty.']
+  contains the string '+0.0243': False
+  contains the word 'masking' in a TEST heading: False
+  FINDING: the TEST 1 (masking/robustness) section is ABSENT from summary.txt.
+  The file holds only the TEST 3 block plus the header and the OVERALL verdict.
+  It was last written by a partial re-run of graph_utility.py, which rewrites
+  summary.txt wholesale, so the masking section was overwritten away.
+  its own verdict line: OVERALL: the graph contributes NOTHING on any axis tested -- robustness, edge interpretability and embedding/calibration quality all fail to separate it from its matched controls. Reported at face val
+
+B3. Where the +0.0243 figure comes from
+------------------------------------------------------------------------------
+  baselines/per_sample_predictions/bulk_top1000__catboost/fold7_GSE84044.csv:44  GSM2226322,7,GSE84044,0.024368252642400164,0.7100000000000002,0,0
+  baselines/per_sample_predictions/panel72_full__xgboost/fold4_GSE213621.csv:6  GSM6590015,4,GSE213621,0.024346115067601204,0.28,0,0
+  decomposition_b8/b8_summary.txt:24  fold 3 (GSE213621 -> GSE193066): total gap=-0.0429  prevalence=-0.0186 [-0.0402, +0.0086]  residual=-0.0243 [-0.1161, +0.0694]
+  figures/diagnosis.txt:140  contains the string '+0.0243': False
+  figures/diagnosis.txt:148  B3. Where the +0.0243 figure comes from
+  figures/diagnosis.txt:150  baselines/per_sample_predictions/bulk_top1000__catboost/fold7_GSE84044.csv:44  GSM2226322,7,GSE84044,0.024368252642400164,0.7100000000000002,0,0
+  figures/diagnosis.txt:151  baselines/per_sample_predictions/panel72_full__xgboost/fold4_GSE213621.csv:6  GSM6590015,4,GSE213621,0.024346115067601204,0.28,0,0
+  figures/diagnosis.txt:152  decomposition_b8/b8_summary.txt:24  fold 3 (GSE213621 -> GSE193066): total gap=-0.0429  prevalence=-0.0186 [-0.0402, +0.0086]  residual=-0.0243 [-0.11
+  figures/diagnosis.txt:153  figures/diagnosis.txt:140  contains the string '+0.0243': False
+  figures/diagnosis.txt:154  figures/diagnosis.txt:148  B3. Where the +0.0243 figure comes from
+  figures/diagnosis.txt:155  figures/diagnosis.txt:150  baselines/per_sample_predictions/bulk_top1000__catboost/fold7_GSE84044.csv:44  GSM2226322,7,GSE84044,0.024368252642400164,0
+  figures/diagnosis.txt:156  figures/diagnosis.txt:151  baselines/per_sample_predictions/panel72_full__xgboost/fold4_GSE213621.csv:6  GSM6590015,4,GSE213621,0.024346115067601204,0
+  figures/diagnosis.txt:157  figures/diagnosis.txt:152  decomposition_b8/b8_summary.txt:24  fold 3 (GSE213621 -> GSE193066): total gap=-0.0429  prevalence=-0.0186 [-0.0402, +0.008
+  figures/diagnosis.txt:158  figures/diagnosis.txt:155  scripts/fix_figures.py:503  def locate_claim(pattern="0.0243"):
+  figures/diagnosis.txt:159  figures/diagnosis.txt:156  scripts/fix_figures.py:562  say(f"  contains the string '+0.0243': {'0.0243' in txt}")
+  figures/diagnosis.txt:160  figures/diagnosis.txt:157  scripts/fix_figures.py:575  say("B3. Where the +0.0243 figure comes from")
+  figures/diagnosis.txt:161  figures/diagnosis.txt:158  scripts/fix_figures.py:577  hits = locate_claim("0.0243")
+  figures/diagnosis.txt:162  figures/diagnosis.txt:159  scripts/fix_figures.py:579  say("  the string '0.0243' does not occur anywhere in the project")
+  figures/diagnosis.txt:163  figures/diagnosis.txt:160  scripts/learned_graph.py:13  real STRING vs empty  = +0.0243 AUC  [95% CI +0.0058, +0.0428]
+  figures/diagnosis.txt:166  scripts/fix_figures.py:503  def locate_claim(pattern="0.0243"):
+  figures/diagnosis.txt:167  scripts/fix_figures.py:562  say(f"  contains the string '+0.0243': {'0.0243' in txt}")
+  figures/diagnosis.txt:168  scripts/fix_figures.py:575  say("B3. Where the +0.0243 figure comes from")
+  figures/diagnosis.txt:169  scripts/fix_figures.py:577  hits = locate_claim("0.0243")
+  figures/diagnosis.txt:170  scripts/fix_figures.py:579  say("  the string '0.0243' does not occur anywhere in the project")
+  figures/diagnosis.txt:171  scripts/learned_graph.py:13  real STRING vs empty  = +0.0243 AUC  [95% CI +0.0058, +0.0428]
+  nanostring/processed/nanostring_handoff.csv:381  EIF3E,10.134440558339806,10.67430952133327,10.23683967910634,9.97597695709986,10.501083424996446,10.224602393447915,10.589542059448712,10.284288436989
+  nanostring/processed/nanostring_handoff.csv:642  HTRA1,11.277177013067787,11.259905180649062,10.096074682003293,11.0960503197659,10.627704109490479,10.558084549158076,11.998003962576995,10.6674980083
+  scripts/fix_figures.py:503  def locate_claim(pattern="0.0243"):
+  scripts/fix_figures.py:562  say(f"  contains the string '+0.0243': {'0.0243' in txt}")
+  scripts/fix_figures.py:575  say("B3. Where the +0.0243 figure comes from")
+  scripts/fix_figures.py:577  hits = locate_claim("0.0243")
+  scripts/fix_figures.py:579  say("  the string '0.0243' does not occur anywhere in the project")
+  scripts/learned_graph.py:13  real STRING vs empty  = +0.0243 AUC  [95% CI +0.0058, +0.0428]
+  FINDING: it occurs only in source comments, in no results file. It is a docstring
+  header, attributed to graph_utility.py, not a value graph_utility.py ever wrote.
+  Whatever its provenance, it cannot be reproduced as an AUC advantage from the
+  saved masking data -- see B5, where the AUC advantage is NEGATIVE with a CI that
+  excludes zero on the wrong side. Treat the docstring as wrong and the data as right.
+
+B4. Aggregation 1 vs Aggregation 2 (real vs empty)
+------------------------------------------------------------------------------
+  rate 0 (no masking), recomputed from saved per-sample probabilities,
+  mean +/- std over the 5 training seeds:
+
+  condition                     sample-pooled    mean-per-cohort  n_cohorts
+  STRING (CoDA-GAT)        0.7854+/-0.0116   0.8225+/-0.0062            8
+  no graph                 0.8044+/-0.0075   0.8268+/-0.0053            8
+  shuffled STRING          0.7949+/-0.0113   0.8292+/-0.0083            8
+  random edges             0.7862+/-0.0134   0.8261+/-0.0047            8
+  learned: co-expression   0.7419+/-0.0132   0.8052+/-0.0051            8
+  learned: end-to-end      0.7879+/-0.0091   0.8302+/-0.0049            8
+
+  real - empty at rate 0:  sample-pooled -0.0190   mean-per-cohort -0.0044
+  Both aggregations give the SAME SIGN (negative).
+  The two levels differ in magnitude because LODO cohorts have different
+  prevalence, so pooling is prevalence-weighted while the per-cohort mean is not.
+  That difference in level is what makes an 0.80-vs-0.83 style mismatch between
+  two of our own tables possible without either being wrong. The DIRECTION of
+  the real-vs-empty contrast is unaffected.
+
+  LIMIT, stated plainly: masked-rate per-sample probabilities were never saved --
+  masking_curves.csv stores only per-(fold, seed, rate, draw) metrics. So the
+  sample-pooled aggregation is recomputable at rate 0 ONLY. Computing pooled
+  masked curves would require re-running inference, which this script will not do.
+  Every masking-rate number below is therefore mean-of-per-cohort, and the figures
+  say so on the axis.
+
+B5. real-vs-empty advantage at each masking rate (mean of per-cohort values)
+------------------------------------------------------------------------------
+  metric = auc
+      rate           level delta (real-empty)       flatness adv (empty-real drop)
+      0.00      -0.0044 [-0.0196,+0.0081] n=8                                     
+      0.10      -0.0062 [-0.0204,+0.0059] n=8        -0.0018 [-0.0038,+0.0004] n=8
+      0.20      -0.0090 [-0.0279,+0.0062] n=8        -0.0046 [-0.0080,-0.0014] n=8
+      0.30      -0.0085 [-0.0238,+0.0048] n=8        -0.0041 [-0.0080,-0.0009] n=8
+      0.40      -0.0163 [-0.0345,-0.0016] n=8        -0.0119 [-0.0159,-0.0081] n=8
+      0.50      -0.0203 [-0.0352,-0.0069] n=8        -0.0160 [-0.0198,-0.0132] n=8
+    pooled over all (cohort x masked rate) cells: -0.0077 [-0.0100,-0.0056] n=40
+    endpoint only (50% masked):        -0.0160 [-0.0198,-0.0133] n=8
+
+  metric = macro_f1
+      rate           level delta (real-empty)       flatness adv (empty-real drop)
+      0.00      -0.0240 [-0.0561,+0.0047] n=8                                     
+      0.10      -0.0235 [-0.0558,+0.0042] n=8        +0.0004 [-0.0068,+0.0085] n=8
+      0.20      -0.0209 [-0.0577,+0.0094] n=8        +0.0030 [-0.0073,+0.0145] n=8
+      0.30      -0.0176 [-0.0533,+0.0161] n=8        +0.0063 [-0.0135,+0.0261] n=8
+      0.40      -0.0084 [-0.0510,+0.0288] n=8        +0.0155 [-0.0096,+0.0402] n=8
+      0.50      +0.0031 [-0.0461,+0.0447] n=8        +0.0271 [-0.0062,+0.0591] n=8
+    pooled over all (cohort x masked rate) cells: +0.0105 [+0.0006,+0.0205] n=40
+    endpoint only (50% masked):        +0.0271 [-0.0083,+0.0596] n=8
+
+  metric = balanced_acc
+      rate           level delta (real-empty)       flatness adv (empty-real drop)
+      0.00      -0.0166 [-0.0432,+0.0077] n=8                                     
+      0.10      -0.0156 [-0.0405,+0.0075] n=8        +0.0010 [-0.0056,+0.0083] n=8
+      0.20      -0.0134 [-0.0420,+0.0118] n=8        +0.0032 [-0.0054,+0.0128] n=8
+      0.30      -0.0094 [-0.0347,+0.0159] n=8        +0.0072 [-0.0097,+0.0240] n=8
+      0.40      -0.0028 [-0.0306,+0.0245] n=8        +0.0138 [-0.0061,+0.0328] n=8
+      0.50      +0.0052 [-0.0254,+0.0328] n=8        +0.0217 [-0.0030,+0.0447] n=8
+    pooled over all (cohort x masked rate) cells: +0.0094 [+0.0017,+0.0171] n=40
+    endpoint only (50% masked):        +0.0217 [-0.0043,+0.0445] n=8
+
+  cross-check vs graph_utility/masking_paired_real_vs_empty.csv: 40 rows, max |flatness_advantage - recomputed| = 1.51e-16
+  its own mean flatness_advantage (AUC) = -0.0077
+
+B6. the same contrast against shuffled STRING (connectivity held, biology destroyed)
+------------------------------------------------------------------------------
+  auc           real vs shuffled flatness advantage = +0.0024 [-0.0003,+0.0054] n=40
+  macro_f1      real vs shuffled flatness advantage = -0.0007 [-0.0069,+0.0054] n=40
+  balanced_acc  real vs shuffled flatness advantage = +0.0017 [-0.0039,+0.0073] n=40
+
+VERDICT (Issue B)
+------------------------------------------------------------------------------
+  The figure is right and the docstring is wrong. Under the saved data the real
+  STRING graph sits BELOW the empty graph on AUC at every masking rate, and falls
+  faster, so its AUC flatness advantage is negative with a CI excluding zero.
+
+  The direction does NOT depend on the aggregation. Sample-pooled and
+  mean-of-per-cohort agree in sign at rate 0; only the level shifts.
+
+  The direction DOES depend on the METRIC, and this is a real result, not an
+  artefact:
+    auc           flatness advantage -0.0077 [-0.0100,-0.0056] -> FAVOURS the no-graph control
+    macro_f1      flatness advantage +0.0105 [+0.0006,+0.0205] -> FAVOURS the graph
+    balanced_acc  flatness advantage +0.0094 [+0.0017,+0.0171] -> FAVOURS the graph
+  Ranking (AUC) degrades faster with the graph; thresholded decision quality
+  (macro-F1, balanced accuracy) degrades more slowly with it. Both are measured on
+  identical gene subsets, paired at the draw level, so this is not sampling noise:
+  the graph is stabilising the decision boundary while not helping the ranking.
+
+  Reported at face value: there is NO single-number 'robustness advantage'. Any
+  claim of one must name its metric. The regenerated fig11 shows both metrics and
+  the signed advantage side by side so the disagreement is visible, not chosen.
+
+==============================================================================
+ISSUE C -- learned-graph outputs: located
+==============================================================================
+C1. Directory tree
+------------------------------------------------------------------------------
+  learned_graph/  -- 626 files
+  top level: ['.DS_Store', 'checkpoints', 'edge_budget_audit.csv', 'edges', 'masking_curves_all_conditions.csv', 'masking_curves_all_conditions.png', 'masking_curves_pooled.csv', 'paired_comparisons.csv', 'protocol_verification.csv', 'summary.txt', 'topology_comparison.csv', 'topology_cross_fold_stability.csv']
+
+C2. Learned edge lists -- PRESENT
+------------------------------------------------------------------------------
+  path    learned_graph/edges/learned_edges_fold<f>_<variant>.csv
+  columns rank,src_idx,dst_idx,src,dst,score,in_string
+  variants ['coexpr_graph', 'e2e_graph']  folds [np.int64(0), np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5), np.int64(6), np.int64(7)]
+
+     variant  fold  n_rows  n_unique_pairs  n_in_string
+coexpr_graph     0     321             321           67
+   e2e_graph     0     321             321           31
+coexpr_graph     1     321             321           67
+   e2e_graph     1     321             321           29
+coexpr_graph     2     321             321           67
+   e2e_graph     2     321             321           47
+coexpr_graph     3     321             321           65
+   e2e_graph     3     321             321           36
+coexpr_graph     4     321             321           67
+   e2e_graph     4     321             321           48
+coexpr_graph     5     321             321           73
+   e2e_graph     5     321             321           38
+coexpr_graph     6     321             321           91
+   e2e_graph     6     321             321           36
+coexpr_graph     7     321             321           77
+   e2e_graph     7     321             321           40
+
+C3. Trained runs -- PRESENT
+------------------------------------------------------------------------------
+  path    learned_graph/checkpoints/<fold_dir>/<condition>/seed_<s>/
+  files   run_metrics.json, probs_test.npy, predictions_test.npy, weights.pt, DONE.marker
+
+  completed seeds per (condition, fold):
+fold_dir      fold0_GSE130970  fold1_GSE135251  fold2_GSE162694  fold3_GSE193066  fold4_GSE213621  fold5_GSE240729  fold6_GSE31803  fold7_GSE84044
+condition                                                                                                                                         
+coexpr_graph                5                5                5                5                5                5               5               5
+e2e_graph                   5                5                5                5                5                5               5               5
+random_graph                5                5                5                5                5                5               5               5
+
+  clean-data AUC from run_metrics.json (mean over seeds, then over folds):
+    coexpr_graph     0.8052 +/- 0.0557  (n=8 cohorts)
+    e2e_graph        0.8302 +/- 0.0321  (n=8 cohorts)
+    random_graph     0.8261 +/- 0.0321  (n=8 cohorts)
+
+C4. Report-stage outputs -- WHAT IS MISSING
+------------------------------------------------------------------------------
+  PRESENT  learned_graph/masking_curves_all_conditions.csv
+  PRESENT  learned_graph/masking_curves_pooled.csv
+  PRESENT  learned_graph/paired_comparisons.csv
+  PRESENT  learned_graph/protocol_verification.csv
+  PRESENT  learned_graph/edge_budget_audit.csv
+  PRESENT  learned_graph/topology_comparison.csv
+  PRESENT  learned_graph/topology_cross_fold_stability.csv
+  PRESENT  learned_graph/masking_curves_all_conditions.png
+  PRESENT  learned_graph/summary.txt
+
+  all report-stage outputs present; fig12/fig13 use the full masking curves
+
+==============================================================================
+END OF DIAGNOSIS
+==============================================================================

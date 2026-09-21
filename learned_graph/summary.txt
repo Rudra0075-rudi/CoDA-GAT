@@ -1,0 +1,59 @@
+==============================================================================
+Learned-Graph Analysis
+==============================================================================
+
+QUESTION: under missingness, does a topology learned from fibrosis training
+data outperform generic STRING protein interactions, and does it beat random
+connectivity? Clean-data AUC is not the criterion -- the label ceiling is
+accepted and the accuracy finding stands.
+
+EDGE-BUDGET AUDIT (measured, not assumed):
+  coexpr_graph     directed=642  undirected pairs=321  symmetric=yes
+  e2e_graph        directed=642  undirected pairs=321  symmetric=yes
+  empty_graph      directed=0  undirected pairs=0  symmetric=yes
+  random_graph     directed=642  undirected pairs=602  symmetric=NO
+  real_graph       directed=642  undirected pairs=321  symmetric=yes
+  shuffled_graph   directed=642  undirected pairs=321  symmetric=yes
+  NOTE: random_graph is asymmetric by construction (B9's control, reused unchanged). The DIRECTED edge budget is matched across all conditions; its undirected pair count is not. Any comparison involving it carries that caveat.
+
+Masking protocol imported unchanged from graph_utility.py (Group A features
+replaced by the fold's training-split per-node mean; masked nodes kept in
+message passing; identical rates, draw count and draw seeds).
+
+POWER: paired cross-fold comparisons are DESCRIPTIVE and underpowered at n=8
+folds; CIs are percentile intervals over (fold x masking-rate) cells and should
+be read as indicative, not confirmatory.
+
+PAIRED COMPARISONS (masked rates only; positive delta favours the first condition):
+  coexpr_graph vs empty_graph            delta=-0.0246 [-0.0473, -0.0046]  1/40 cells  p=3.638e-12
+  coexpr_graph vs shuffled_graph         delta=-0.0169 [-0.0529, +0.0464]  7/40 cells  p=0.0006755
+  coexpr_graph vs random_graph           delta=-0.0123 [-0.0533, +0.0769]  9/40 cells  p=0.01107
+  coexpr_graph vs real_graph             delta=-0.0125 [-0.0605, +0.0523]  7/40 cells  p=0.0006385
+  e2e_graph vs empty_graph               delta=-0.0102 [-0.0523, +0.0211]  14/40 cells  p=0.01154
+  e2e_graph vs shuffled_graph            delta=-0.0025 [-0.0360, +0.0260]  21/40 cells  p=0.6179
+  e2e_graph vs random_graph              delta=+0.0020 [-0.0220, +0.0411]  20/40 cells  p=0.6273
+  e2e_graph vs real_graph                delta=+0.0018 [-0.0456, +0.0464]  23/40 cells  p=0.5627
+  real_graph vs empty_graph              delta=-0.0120 [-0.0643, +0.0142]  14/40 cells  p=0.008264
+  real_graph vs shuffled_graph           delta=-0.0043 [-0.0552, +0.0686]  17/40 cells  p=0.1281
+  real_graph vs random_graph             delta=+0.0002 [-0.0401, +0.0438]  22/40 cells  p=0.8576
+
+CLEAN-DATA (0% masking) AUC -- sanity check that the protocol is unchanged:
+  coexpr_graph       0.8052
+  e2e_graph          0.8302
+  empty_graph        0.8268
+  random_graph       0.8261
+  real_graph         0.8225
+  shuffled_graph     0.8292
+
+LEARNED ~ SHUFFLED (coexpr_graph) -- only connectivity matters, not which connections. vs shuffled delta=-0.0169 CI [-0.0529, +0.0464].
+LEARNED ~ SHUFFLED (e2e_graph) -- only connectivity matters, not which connections. vs shuffled delta=-0.0025 CI [-0.0360, +0.0260].
+
+TOPOLOGY INSPECTION:
+  coexpr_graph: mean Jaccard with STRING = 0.126 (71.8/321 edges shared)
+    canonical fibrosis genes among top-10 hubs (mean over folds): 1.9/10
+    cross-fold edge-set Jaccard = 0.844 -- topology is reasonably stable across folds.
+  e2e_graph: mean Jaccard with STRING = 0.063 (38.1/321 edges shared)
+    canonical fibrosis genes among top-10 hubs (mean over folds): 0.6/10
+    cross-fold edge-set Jaccard = 0.312 -- LOW: each fold learns a substantially different graph, which is what fitting noise looks like. Treat any advantage with corresponding caution.
+
+==============================================================================

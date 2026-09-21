@@ -1,0 +1,9 @@
+{
+  "variant": "random_graph",
+  "fold": 6,
+  "seed": 43,
+  "best_val_f1": 0.7249289849340189,
+  "auc": 0.8453124999999999,
+  "macro_f1": 0.64,
+  "balanced_acc": 0.659375
+}

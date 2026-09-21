@@ -1,0 +1,36 @@
+
+empty_graph vs baseline (off, m=0):
+  auc: n=8 folds, mean diff=+0.0044 (baseline mean=0.8225), Wilcoxon p=0.9453 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  macro_f1: n=8 folds, mean diff=+0.0240 (baseline mean=0.7028), Wilcoxon p=0.7422 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  balanced_acc: n=8 folds, mean diff=+0.0166 (baseline mean=0.7236), Wilcoxon p=0.7422 (descriptive/indicative only, n=8 -- not the pre-registered test)
+
+no_fold_fitted_features vs baseline (off, m=0):
+  auc: n=8 folds, mean diff=-0.0110 (baseline mean=0.8225), Wilcoxon p=0.3828 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  macro_f1: n=8 folds, mean diff=-0.0343 (baseline mean=0.7028), Wilcoxon p=0.0156 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  balanced_acc: n=8 folds, mean diff=-0.0306 (baseline mean=0.7236), Wilcoxon p=0.0078 (descriptive/indicative only, n=8 -- not the pre-registered test)
+
+no_h3_deviation vs baseline (off, m=0):
+  auc: n=8 folds, mean diff=-0.0018 (baseline mean=0.8225), Wilcoxon p=0.6406 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  macro_f1: n=8 folds, mean diff=-0.0041 (baseline mean=0.7028), Wilcoxon p=0.7422 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  balanced_acc: n=8 folds, mean diff=-0.0050 (baseline mean=0.7236), Wilcoxon p=0.6406 (descriptive/indicative only, n=8 -- not the pre-registered test)
+
+no_pathway_features vs baseline (off, m=0):
+  auc: n=8 folds, mean diff=-0.0114 (baseline mean=0.8225), Wilcoxon p=0.0547 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  macro_f1: n=8 folds, mean diff=-0.0355 (baseline mean=0.7028), Wilcoxon p=0.3828 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  balanced_acc: n=8 folds, mean diff=-0.0279 (baseline mean=0.7236), Wilcoxon p=0.2500 (descriptive/indicative only, n=8 -- not the pre-registered test)
+
+random_graph vs baseline (off, m=0):
+  auc: n=8 folds, mean diff=+0.0041 (baseline mean=0.8225), Wilcoxon p=0.7422 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  macro_f1: n=8 folds, mean diff=+0.0086 (baseline mean=0.7028), Wilcoxon p=0.4609 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  balanced_acc: n=8 folds, mean diff=+0.0067 (baseline mean=0.7236), Wilcoxon p=0.6406 (descriptive/indicative only, n=8 -- not the pre-registered test)
+
+shuffled_graph vs baseline (off, m=0):
+  auc: n=8 folds, mean diff=+0.0065 (baseline mean=0.8225), Wilcoxon p=0.4609 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  macro_f1: n=8 folds, mean diff=+0.0096 (baseline mean=0.7028), Wilcoxon p=0.1484 (descriptive/indicative only, n=8 -- not the pre-registered test)
+  balanced_acc: n=8 folds, mean diff=+0.0101 (baseline mean=0.7236), Wilcoxon p=0.1562 (descriptive/indicative only, n=8 -- not the pre-registered test)
+
+augmentation m-sweep (0,1,3,7) vs baseline (off, m=0):
+  m=1: NOT YET RUN -- run: /opt/anaconda3/envs/dagat/bin/python scripts/run_full_experiment_b7.py --m 1 --modes off
+  m=3: NOT YET RUN -- run: /opt/anaconda3/envs/dagat/bin/python scripts/run_full_experiment_b7.py --m 3 --modes off
+  m=7: NOT YET RUN -- run: /opt/anaconda3/envs/dagat/bin/python scripts/run_full_experiment_b7.py --m 7 --modes off
+  (need at least m=0 and one other m to compare -- see commands above)
