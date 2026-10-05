@@ -160,20 +160,31 @@ B3. Where the +0.0243 figure comes from
   figures/diagnosis.txt:155  figures/diagnosis.txt:150  baselines/per_sample_predictions/bulk_top1000__catboost/fold7_GSE84044.csv:44  GSM2226322,7,GSE84044,0.024368252642400164,0
   figures/diagnosis.txt:156  figures/diagnosis.txt:151  baselines/per_sample_predictions/panel72_full__xgboost/fold4_GSE213621.csv:6  GSM6590015,4,GSE213621,0.024346115067601204,0
   figures/diagnosis.txt:157  figures/diagnosis.txt:152  decomposition_b8/b8_summary.txt:24  fold 3 (GSE213621 -> GSE193066): total gap=-0.0429  prevalence=-0.0186 [-0.0402, +0.008
-  figures/diagnosis.txt:158  figures/diagnosis.txt:155  scripts/fix_figures.py:503  def locate_claim(pattern="0.0243"):
-  figures/diagnosis.txt:159  figures/diagnosis.txt:156  scripts/fix_figures.py:562  say(f"  contains the string '+0.0243': {'0.0243' in txt}")
-  figures/diagnosis.txt:160  figures/diagnosis.txt:157  scripts/fix_figures.py:575  say("B3. Where the +0.0243 figure comes from")
-  figures/diagnosis.txt:161  figures/diagnosis.txt:158  scripts/fix_figures.py:577  hits = locate_claim("0.0243")
-  figures/diagnosis.txt:162  figures/diagnosis.txt:159  scripts/fix_figures.py:579  say("  the string '0.0243' does not occur anywhere in the project")
-  figures/diagnosis.txt:163  figures/diagnosis.txt:160  scripts/learned_graph.py:13  real STRING vs empty  = +0.0243 AUC  [95% CI +0.0058, +0.0428]
-  figures/diagnosis.txt:166  scripts/fix_figures.py:503  def locate_claim(pattern="0.0243"):
-  figures/diagnosis.txt:167  scripts/fix_figures.py:562  say(f"  contains the string '+0.0243': {'0.0243' in txt}")
-  figures/diagnosis.txt:168  scripts/fix_figures.py:575  say("B3. Where the +0.0243 figure comes from")
-  figures/diagnosis.txt:169  scripts/fix_figures.py:577  hits = locate_claim("0.0243")
-  figures/diagnosis.txt:170  scripts/fix_figures.py:579  say("  the string '0.0243' does not occur anywhere in the project")
-  figures/diagnosis.txt:171  scripts/learned_graph.py:13  real STRING vs empty  = +0.0243 AUC  [95% CI +0.0058, +0.0428]
+  figures/diagnosis.txt:158  figures/diagnosis.txt:153  figures/diagnosis.txt:140  contains the string '+0.0243': False
+  figures/diagnosis.txt:159  figures/diagnosis.txt:154  figures/diagnosis.txt:148  B3. Where the +0.0243 figure comes from
+  figures/diagnosis.txt:160  figures/diagnosis.txt:155  figures/diagnosis.txt:150  baselines/per_sample_predictions/bulk_top1000__catboost/fold7_GSE84044.csv:44  GSM2226322,7,GSE8
+  figures/diagnosis.txt:161  figures/diagnosis.txt:156  figures/diagnosis.txt:151  baselines/per_sample_predictions/panel72_full__xgboost/fold4_GSE213621.csv:6  GSM6590015,4,GSE21
+  figures/diagnosis.txt:163  figures/diagnosis.txt:158  figures/diagnosis.txt:155  scripts/fix_figures.py:503  def locate_claim(pattern="0.0243"):
+  figures/diagnosis.txt:164  figures/diagnosis.txt:159  figures/diagnosis.txt:156  scripts/fix_figures.py:562  say(f"  contains the string '+0.0243': {'0.0243' in txt}")
+  figures/diagnosis.txt:165  figures/diagnosis.txt:160  figures/diagnosis.txt:157  scripts/fix_figures.py:575  say("B3. Where the +0.0243 figure comes from")
+  figures/diagnosis.txt:166  figures/diagnosis.txt:161  figures/diagnosis.txt:158  scripts/fix_figures.py:577  hits = locate_claim("0.0243")
+  figures/diagnosis.txt:167  figures/diagnosis.txt:162  figures/diagnosis.txt:159  scripts/fix_figures.py:579  say("  the string '0.0243' does not occur anywhere in the project")
+  figures/diagnosis.txt:168  figures/diagnosis.txt:163  figures/diagnosis.txt:160  scripts/learned_graph.py:13  real STRING vs empty  = +0.0243 AUC  [95% CI +0.0058, +0.0428]
+  figures/diagnosis.txt:169  figures/diagnosis.txt:166  scripts/fix_figures.py:503  def locate_claim(pattern="0.0243"):
+  figures/diagnosis.txt:170  figures/diagnosis.txt:167  scripts/fix_figures.py:562  say(f"  contains the string '+0.0243': {'0.0243' in txt}")
+  figures/diagnosis.txt:171  figures/diagnosis.txt:168  scripts/fix_figures.py:575  say("B3. Where the +0.0243 figure comes from")
+  figures/diagnosis.txt:172  figures/diagnosis.txt:169  scripts/fix_figures.py:577  hits = locate_claim("0.0243")
+  figures/diagnosis.txt:173  figures/diagnosis.txt:170  scripts/fix_figures.py:579  say("  the string '0.0243' does not occur anywhere in the project")
+  figures/diagnosis.txt:174  figures/diagnosis.txt:171  scripts/learned_graph.py:13  real STRING vs empty  = +0.0243 AUC  [95% CI +0.0058, +0.0428]
+  figures/diagnosis.txt:177  scripts/fix_figures.py:503  def locate_claim(pattern="0.0243"):
+  figures/diagnosis.txt:178  scripts/fix_figures.py:562  say(f"  contains the string '+0.0243': {'0.0243' in txt}")
+  figures/diagnosis.txt:179  scripts/fix_figures.py:575  say("B3. Where the +0.0243 figure comes from")
+  figures/diagnosis.txt:180  scripts/fix_figures.py:577  hits = locate_claim("0.0243")
+  figures/diagnosis.txt:181  scripts/fix_figures.py:579  say("  the string '0.0243' does not occur anywhere in the project")
+  figures/diagnosis.txt:182  scripts/learned_graph.py:13  real STRING vs empty  = +0.0243 AUC  [95% CI +0.0058, +0.0428]
   nanostring/processed/nanostring_handoff.csv:381  EIF3E,10.134440558339806,10.67430952133327,10.23683967910634,9.97597695709986,10.501083424996446,10.224602393447915,10.589542059448712,10.284288436989
   nanostring/processed/nanostring_handoff.csv:642  HTRA1,11.277177013067787,11.259905180649062,10.096074682003293,11.0960503197659,10.627704109490479,10.558084549158076,11.998003962576995,10.6674980083
+  review_fixes/task1_masking_cohort_unit.csv:576  balanced_acc,e2e_graph,empty_graph,7,0.4,0.6951938589643508,0.7195654436638043,-0.02437158469945344,0.03948477751756463,GSE84044
   scripts/fix_figures.py:503  def locate_claim(pattern="0.0243"):
   scripts/fix_figures.py:562  say(f"  contains the string '+0.0243': {'0.0243' in txt}")
   scripts/fix_figures.py:575  say("B3. Where the +0.0243 figure comes from")

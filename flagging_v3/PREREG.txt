@@ -1,0 +1,131 @@
+CoDA-GAT flagging v3 -- PRE-REGISTRATION
+written: 2026-09-22 19:57:03 +06
+script:  scripts/flagging_v3.py
+
+This file is written BEFORE any result in this analysis is computed, and is
+never modified afterwards. If it already exists, the script leaves it alone.
+
+--------------------------------------------------------------------------------
+WHY THIS ANALYSIS EXISTS
+--------------------------------------------------------------------------------
+flagging_v2 reported that its 18.0% flag rate agreed with the forward noise
+model's 18.6% F2+ misassignment rate. That comparison is CIRCULAR: 18% was a
+pre-set target in flagging_v2 (MATCHED_COUNTS contains "18%", and
+rank_to_count() selects exactly that many patients). The flag rate was chosen,
+not estimated, so it cannot corroborate anything. It would have "agreed" with
+whatever number it had been set to.
+
+This analysis replaces it with a rate that is ESTIMATED from data and compared
+against a reference derived from evidence that shares no input with it.
+
+--------------------------------------------------------------------------------
+INDEPENDENT REFERENCE (fixed before this analysis runs)
+--------------------------------------------------------------------------------
+Source: review_fixes/task4_latent_noise_ceiling.csv, column
+f2_misassignment_rate, over all published weighted kappa values and BOTH the
+linear and quadratic weightings, on the 'exact-labels' stage marginal.
+
+    reference range = 13.7% to 23.9%
+    kappa values    = [0.47, 0.53, 0.59]
+    weightings      = ['linear', 'quadratic']
+    settings        = 6
+
+That range is produced by inverting published inter-rater agreement into a
+latent reader-noise sigma and evaluating P(noisy F2+ call != ideal F2+ call)
+in closed form. It uses NO model output: no AUC, no predicted probability, no
+flag. This independence is what makes an overlap meaningful.
+
+--------------------------------------------------------------------------------
+PRIMARY TEST
+--------------------------------------------------------------------------------
+The Confident Learning (Northcutt, Jiang & Chuang 2021) estimated noise rate
+for CoDA-GAT (mode = off, seed-averaged p(F2+) over 5 seeds), pooled
+over the 8 held-out cohorts.
+
+DECISION RULE, fixed now: the estimate AGREES with the reference iff its 95%
+bootstrap CI overlaps [0.1371, 0.2391]. Overlap of the intervals, not of
+the point estimates. A point estimate inside the range with a CI that also
+extends far outside it is reported as agreement with wide uncertainty, and the
+width is stated. Non-overlap is reported as disagreement, plainly, and is NOT
+followed by an adjustment of either quantity.
+
+--------------------------------------------------------------------------------
+SECONDARY TESTS
+--------------------------------------------------------------------------------
+(a) The same Confident Learning estimate for the EMPTY-GRAPH model. Reported
+    beside the real-graph estimate. No claim about which is "right" is made in
+    advance; both are shown against the same reference.
+
+(b) DIRECTION TEST. Among Confident-Learning-flagged patients, the share whose
+    recorded label is "too high" (recorded F2+, model confidently says not).
+    Two-sided exact binomial test against 0.5. The noise model predicts
+    symmetry when both scales carry the same F2+ prevalence, so a significant
+    departure indicates the noise is directional -- a systematic reading bias
+    rather than symmetric reader disagreement.
+
+(c) PER-COHORT rates for all 8 held-out cohorts. n = 8 is underpowered;
+    per-cohort numbers are descriptive.
+
+--------------------------------------------------------------------------------
+CONFIDENT LEARNING -- exact specification
+--------------------------------------------------------------------------------
+1. PER-CLASS THRESHOLDS, from each fold's CALIBRATION cohort only:
+       t_j = mean of p_hat(y = j | x) over calibration samples LABELLED j
+   Computed per fold. Never from the test cohort. These are computed from a
+   formula; they are not tuned, searched, or selected.
+
+2. CONFIDENT JOINT on the test cohort (Northcutt et al. eq. 2):
+       C[i][j] = #{ x : label(x) = i,  p_j(x) >= t_j,
+                     j = argmax over classes k with p_k(x) >= t_k }
+   Samples exceeding no threshold are excluded, as in the original method.
+   Per-fold joints are SUMMED to pool the 8 cohorts.
+
+3. CALIBRATION of the joint to a distribution:
+       Q[i][j] = C[i][j] / sum_j C[i][j] * n_i,  then normalised to sum to 1
+   Q is CL's estimate of P(recorded label = i, true label = j).
+
+4. ESTIMATED NOISE RATE = sum of the off-diagonal of Q = 1 - trace(Q).
+
+5. FLAGGED PATIENTS, both variants reported:
+     (i)  confident-joint off-diagonal members -- every sample whose confident
+          class differs from its recorded label;
+     (ii) prune_by_noise_rate -- cleanlab's default: within each off-diagonal
+          cell, rank candidates by margin p_j - p_i and keep round(Q[i][j] * n)
+          of them, so the flagged count matches the estimated rate.
+
+6. CROSS-CHECK: cleanlab.filter.find_label_issues, if cleanlab is installed.
+   It computes its own thresholds from the test split rather than from
+   calibration, so it is an independent implementation, NOT a replication.
+   Both are reported. If cleanlab is absent this is recorded as unavailable.
+
+--------------------------------------------------------------------------------
+UNCERTAINTY
+--------------------------------------------------------------------------------
+95% CIs by bootstrap over PATIENTS WITHIN COHORT: 2000 resamples, each
+cohort resampled with replacement to its own original size. Per-fold thresholds
+are held fixed, since they derive from calibration cohorts that are not
+resampled. The confident joint is rebuilt on each resample and the rate
+recomputed, so the CI propagates the joint's own sampling variability.
+
+--------------------------------------------------------------------------------
+COMPARABILITY WITH flagging_v2
+--------------------------------------------------------------------------------
+CL-flagged patients are scored on exactly the metrics flagging_v2 used --
+stage distribution F0-F4, F1/F2 boundary enrichment odds ratio, two-stage
+share (F0 or F3), and direction split -- by IMPORTING flagging_v2's functions
+rather than reimplementing them, so no difference between v2 and v3 numbers can
+come from the scoring code.
+
+--------------------------------------------------------------------------------
+HARD RULES
+--------------------------------------------------------------------------------
+  1. The ordinal stage F0-F4 is used ONLY to evaluate flags, NEVER to create
+     them. Enforced by assert_no_stage_leak() against the whitelist:
+       disagreement, fold, n_runs_flagged, p_f2plus, p_tabular, sample_id, uncertainty, y_true
+  2. Thresholds come from calibration cohorts only.
+  3. No threshold tuning of any kind. No knob in this script changes the
+     estimate.
+  4. The result is reported at face value, INCLUDING if the estimated rate
+     falls outside the reference range. A non-overlap will not be followed by
+     re-deriving either number.
+  5. Inference only. No model is loaded; no retraining.

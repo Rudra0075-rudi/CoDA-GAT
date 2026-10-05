@@ -1,0 +1,207 @@
+==============================================================================
+CoDA-GAT flagging v4
+==============================================================================
+pre-registration: flagging_v4/PREREG.txt
+Inference only -- no model is constructed, nothing is retrained. Sources:
+  flagging_v2/cache/ (MC-dropout), results_b7/ and graph_utility/ (probabilities).
+
+independent noise reference (review_fixes/): 13.71% to 23.91%
+
+  CoDA-GAT (STRING graph)      8 folds, 120 run-folds loaded
+  empty-graph control          8 folds, 40 run-folds loaded
+  shuffled-STRING control      8 folds, 40 run-folds loaded
+
+==============================================================================
+TASK 1 -- ensemble flags and split-half stability
+==============================================================================
+  runs available: 15 of 15 (modes ['conditional', 'marginal', 'off'])
+  single-mode pool (off): 5 runs
+
+  ENSEMBLE FLAGS (all 15 runs averaged)
+------------------------------------------------------------------------------
+    v2 V1 rule:              39 flags (3.67%)
+    Confident Learning:     171 flags (16.07%), estimated noise rate 22.05%
+    per-fold calibration p40 thresholds: {0: 0.05616, 1: 0.05676, 2: 0.05904, 3: 0.0576, 4: 0.05482, 5: 0.05469, 6: 0.05996, 7: 0.05982}
+    ensemble V1 (15 runs)      OR=3.357 [1.71,7.32]  two-stage 28.2%  low/high 13/26
+    ensemble CL (15 runs)      OR=2.171 [1.58,3.03]  two-stage 39.2%  low/high 68/103
+
+  SPLIT-HALF STABILITY (Jaccard between two disjoint run-groups, same flag count)
+------------------------------------------------------------------------------
+    at 52 flags:
+      15-run ensemble, split (8, 7)                Jaccard 0.427 [0.333, 0.529]
+      single-mode off, split (3, 2)                Jaccard 0.287 [0.195, 0.387]
+      15-run pool, SIZE-MATCHED split (3, 2)       Jaccard 0.272 [0.143, 0.425]
+      -> size-matched verdict: mode diversity does NOT increase stability (0.272 vs 0.287; intervals overlap)
+
+    at 192 flags:
+      15-run ensemble, split (8, 7)                Jaccard 0.645 [0.567, 0.714]
+      single-mode off, split (3, 2)                Jaccard 0.514 [0.483, 0.567]
+      15-run pool, SIZE-MATCHED split (3, 2)       Jaccard 0.536 [0.438, 0.634]
+      -> size-matched verdict: mode diversity does NOT increase stability (0.536 vs 0.514; intervals overlap)
+
+  Read the size-matched row, not the first one: an 8/7 split averages more runs
+  than a 3/2 split, so it would look steadier even if mode diversity added
+  nothing. Only the size-matched contrast isolates diversity from count.
+
+==============================================================================
+TASK 2 -- planted-error test (the first test here with a ground truth)
+==============================================================================
+  Boundary labels are flipped in known places; models are unchanged. Recall and
+  precision are therefore measurable, not inferred from where flags happen to
+  land. The identical planted set is given to every condition, so real vs empty
+  is paired by construction.
+
+  BACKGROUND at 0% planting (nothing flipped)
+------------------------------------------------------------------------------
+    CoDA-GAT (STRING graph)      v2 flag rate 18.05%   CL noise rate 22.50%   CL flag rate 16.45%
+    empty-graph control          v2 flag rate 18.05%   CL noise rate 19.64%   CL flag rate 13.72%
+    shuffled-STRING control      v2 flag rate 18.05%   CL noise rate 19.18%   CL flag rate 13.25%
+
+  RECALL and PRECISION  (primary setting: v2 rule at 192 flags)
+------------------------------------------------------------------------------
+    condition                      rate                 recall              precision
+    -- v2_rule / fixed_192 --
+    CoDA-GAT (STRING graph)          5%   47.5% [37.5%, 58.7%]   12.9% [10.1%, 15.9%]
+    CoDA-GAT (STRING graph)         10%   45.3% [37.7%, 51.9%]   25.0% [20.8%, 28.6%]
+    CoDA-GAT (STRING graph)         15%   43.9% [40.0%, 47.5%]   36.6% [33.3%, 39.6%]
+    empty-graph control              5%   51.7% [40.4%, 63.5%]   14.0% [10.9%, 17.2%]
+    empty-graph control             10%   48.7% [42.4%, 54.7%]   26.9% [23.4%, 30.2%]
+    empty-graph control             15%   46.7% [43.4%, 50.0%]   38.9% [36.2%, 41.7%]
+    shuffled-STRING control          5%   49.0% [38.5%, 59.6%]   13.3% [10.4%, 16.1%]
+    shuffled-STRING control         10%   46.0% [38.2%, 51.9%]   25.4% [21.1%, 28.7%]
+    shuffled-STRING control         15%   44.2% [39.7%, 47.8%]   36.9% [33.1%, 39.9%]
+
+    -- v2_rule / oracle_count --
+    CoDA-GAT (STRING graph)          5%    16.7% [9.6%, 23.1%]             (= recall)
+    CoDA-GAT (STRING graph)         10%   27.1% [22.6%, 32.1%]             (= recall)
+    CoDA-GAT (STRING graph)         15%   36.7% [33.1%, 40.6%]             (= recall)
+    empty-graph control              5%   20.3% [11.5%, 27.9%]             (= recall)
+    empty-graph control             10%   30.4% [25.5%, 34.9%]             (= recall)
+    empty-graph control             15%   40.8% [36.2%, 45.0%]             (= recall)
+    shuffled-STRING control          5%    18.1% [9.6%, 26.0%]             (= recall)
+    shuffled-STRING control         10%   28.6% [23.6%, 34.0%]             (= recall)
+    shuffled-STRING control         15%   38.3% [34.0%, 42.2%]             (= recall)
+
+    -- confident_learning / pruned --
+    CoDA-GAT (STRING graph)          5%   49.2% [36.5%, 61.5%]   13.5% [10.4%, 16.2%]
+    CoDA-GAT (STRING graph)         10%   47.8% [38.7%, 55.2%]   25.0% [21.8%, 27.4%]
+    CoDA-GAT (STRING graph)         15%   48.2% [43.1%, 53.8%]   35.4% [33.2%, 37.9%]
+    empty-graph control              5%   49.4% [36.5%, 63.5%]   15.7% [12.1%, 19.0%]
+    empty-graph control             10%   47.9% [39.1%, 56.2%]   28.3% [25.1%, 31.0%]
+    empty-graph control             15%   48.8% [43.8%, 54.1%]   39.5% [36.9%, 42.4%]
+    shuffled-STRING control          5%   49.3% [36.5%, 62.5%]   16.2% [12.6%, 19.6%]
+    shuffled-STRING control         10%   48.5% [40.6%, 57.1%]   29.5% [26.4%, 32.7%]
+    shuffled-STRING control         15%   49.0% [43.1%, 55.3%]   40.7% [37.8%, 43.3%]
+
+    At 'oracle_count' the flag count equals the planted count, so precision and
+    recall are arithmetically identical -- declared in advance, reported once.
+
+  CONFIDENT LEARNING SENSITIVITY: slope of estimated noise rate on planted rate
+------------------------------------------------------------------------------
+    CoDA-GAT (STRING graph)      slope 0.364 [0.248, 0.483]   (1.0 = every planted error shows up in the estimate; 0 = blind)
+    empty-graph control          slope 0.461 [0.360, 0.564]   (1.0 = every planted error shows up in the estimate; 0 = blind)
+    shuffled-STRING control      slope 0.463 [0.343, 0.581]   (1.0 = every planted error shows up in the estimate; 0 = blind)
+
+  PAIRED DIFFERENCES, real minus control (same planted labels in both arms)
+------------------------------------------------------------------------------
+    v2_rule              vs empty_graph     @  5%  drecall  -0.0429 [-0.1447, 0.0486]  -> no difference
+    v2_rule              vs empty_graph     @ 10%  drecall  -0.0343 [-0.0849, 0.0333]  -> no difference
+    v2_rule              vs empty_graph     @ 15%  drecall  -0.0279 [-0.0687, 0.0125]  -> no difference
+    v2_rule              vs shuffled_graph  @  5%  drecall  -0.0154 [-0.1154, 0.1062]  -> no difference
+    v2_rule              vs shuffled_graph  @ 10%  drecall  -0.0072 [-0.0660, 0.0566]  -> no difference
+    v2_rule              vs shuffled_graph  @ 15%  drecall  -0.0033 [-0.0438, 0.0408]  -> no difference
+
+    confident_learning   vs empty_graph     @  5%  drecall  -0.0027 [-0.0769, 0.0577]  -> no difference
+    confident_learning   vs empty_graph     @ 10%  drecall  -0.0010 [-0.0427, 0.0427]  -> no difference
+    confident_learning   vs empty_graph     @ 15%  drecall  -0.0064 [-0.0375, 0.0250]  -> no difference
+    confident_learning   vs shuffled_graph  @  5%  drecall  -0.0015 [-0.0870, 0.0779]  -> no difference
+    confident_learning   vs shuffled_graph  @ 10%  drecall  -0.0065 [-0.0521, 0.0427]  -> no difference
+    confident_learning   vs shuffled_graph  @ 15%  drecall  -0.0082 [-0.0500, 0.0253]  -> no difference
+
+  VERDICTS (Task 2)
+------------------------------------------------------------------------------
+    @5%: recall 47.5% [37.5%, 58.7%] vs background flag rate 18.0%  -> DETECTS planted error
+    @10%: recall 45.3% [37.7%, 51.9%] vs background flag rate 18.0%  -> DETECTS planted error
+    @15%: recall 43.9% [40.0%, 47.5%] vs background flag rate 18.0%  -> DETECTS planted error
+
+    GRAPH: no matched-count setting shows the real graph recovering planted
+    errors better than the empty graph with a CI excluding zero. Reported as
+    no difference, per the pre-registration -- not as a trend.
+
+==============================================================================
+TASK 3 -- direction bias: real asymmetry, or a mis-set operating point?
+==============================================================================
+  DESCRIPTIVE, per cohort
+------------------------------------------------------------------------------
+    cohort           n  mean p(F2+)  pred +ve @0.5  recorded F2+      gap
+    GSE130970       78        0.589          59.0%         32.1%   +26.9%
+    GSE135251      206        0.595          63.1%         58.7%    +4.4%
+    GSE162694      112        0.620          70.5%         42.0%   +28.6%
+    GSE193066      106        0.491          44.3%         59.4%   -15.1%
+    GSE213621      299        0.565          61.2%         67.6%    -6.4%
+    GSE240729       67        0.549          55.2%         61.2%    -6.0%
+    GSE31803        72        0.385          29.2%         44.4%   -15.3%
+    GSE84044       124        0.377          31.5%         49.2%   -17.7%
+    mean |gap| across cohorts: 15.0%
+
+  PRIOR CORRECTION: tau chosen so the CALIBRATION cohort's predicted-positive
+  share equals its recorded F2+ share; applied to the test cohort.
+------------------------------------------------------------------------------
+    cohort            tau  cal recorded +ve  test +ve @0.5  test +ve @tau
+    GSE130970      0.5184             58.7%          59.0%          57.7%
+    GSE135251      0.6819             42.0%          63.1%          40.8%
+    GSE162694      0.4292             59.4%          70.5%          75.0%
+    GSE193066      0.3838             67.6%          44.3%          54.7%
+    GSE213621      0.3698             61.2%          61.2%          71.2%
+    GSE240729      0.4821             44.4%          55.2%          58.2%
+    GSE31803       0.3138             49.2%          29.2%          55.6%
+    GSE84044       0.7353             32.1%          31.5%          12.1%
+
+  DIRECTION TEST (exact two-sided binomial vs 0.5, on CL pruned flags)
+------------------------------------------------------------------------------
+    before prior correction: CL noise rate 22.05%, 171 flags
+      too high 103 / too low 68   share too high 0.602 [0.525, 0.676]   p = 0.009122
+      per cohort:
+        cohort        flags  high   low             share high         p
+        GSE130970        12     1    11     0.083 [0.00, 0.38]   0.00635
+        GSE135251        32    26     6     0.812 [0.64, 0.93]  0.000535
+        GSE162694        25     2    23     0.080 [0.01, 0.26]  1.94e-05
+        GSE193066        20    17     3     0.850 [0.62, 0.97]   0.00258
+        GSE213621        46    26    20     0.565 [0.41, 0.71]     0.461
+        GSE240729         4     2     2     0.500 [0.07, 0.93]         1
+        GSE31803          4     2     2     0.500 [0.07, 0.93]         1
+        GSE84044         28    27     1     0.964 [0.82, 1.00]  2.16e-07
+
+    after prior correction: CL noise rate 23.04%, 179 flags
+      too high 107 / too low 72   share too high 0.598 [0.522, 0.670]   p = 0.01084
+      per cohort:
+        cohort        flags  high   low             share high         p
+        GSE130970        12     1    11     0.083 [0.00, 0.38]   0.00635
+        GSE135251        36    30     6     0.833 [0.67, 0.94]  6.96e-05
+        GSE162694        25     2    23     0.080 [0.01, 0.26]  1.94e-05
+        GSE193066        19    16     3     0.842 [0.60, 0.97]   0.00443
+        GSE213621        44    22    22     0.500 [0.35, 0.65]         1
+        GSE240729         4     2     2     0.500 [0.07, 0.93]         1
+        GSE31803          7     2     5     0.286 [0.04, 0.71]     0.453
+        GSE84044         32    32     0     1.000 [0.89, 1.00]  4.66e-10
+
+  VERDICT (Task 3)
+------------------------------------------------------------------------------
+    GENUINE ASYMMETRY. The bias survives prior correction, so it is not
+    explained by the operating point. Recorded labels are more often too
+    high than too low, or the reverse -- see the sign above.
+==============================================================================
+FILES WRITTEN
+==============================================================================
+  flagging_v4/PREREG.txt
+  flagging_v4/task1_ensemble_variants.csv
+  flagging_v4/task1_split_half_stability.csv
+  flagging_v4/task1_split_half_stability.pdf
+  flagging_v4/task1_split_half_stability.png
+  flagging_v4/task2_planted_error.pdf
+  flagging_v4/task2_planted_error.png
+  flagging_v4/task2_planted_raw.csv
+  flagging_v4/task2_planted_summary.csv
+  flagging_v4/task3_direction_tests.csv
+  flagging_v4/task3_per_cohort_descriptive.csv
+  flagging_v4/task3_prior_thresholds.json

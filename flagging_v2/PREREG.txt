@@ -1,0 +1,107 @@
+CoDA-GAT flagging v2 -- PRE-REGISTRATION
+written: 2026-09-22 16:22:35 +06
+script:  scripts/flagging_v2.py
+git-free timestamp; this file is written BEFORE any result in this analysis is
+computed, and is not modified afterwards.
+
+--------------------------------------------------------------------------------
+BACKGROUND (already known, not re-tested here)
+--------------------------------------------------------------------------------
+Test A flagged 52/1064 held-out patients (4.9%) using: disagreement > 0.5 AND
+MC-dropout uncertainty <= the 40th percentile of that fold's calibration
+cohort's uncertainty. Enrichment at F1/F2 vs F0/F3/F4: one-sided Fisher
+OR = 2.731, p = 0.0005. The 4.9% rate is below the 15-25% band declared useful.
+
+--------------------------------------------------------------------------------
+PRIMARY COMPARISON
+--------------------------------------------------------------------------------
+Real-graph CoDA-GAT flags vs empty-graph CoDA-GAT flags, at MATCHED flag counts
+of 52, 18%. Matching is by construction, not by luck: see RANKING below.
+
+PRIMARY METRIC
+  One-sided Fisher exact odds ratio for flags falling at F1/F2 rather than
+  F0/F3/F4. H1: flagged patients are more likely to sit adjacent to the F2+
+  boundary. Reported on raw counts.
+
+SECONDARY METRICS
+  1. two-stage share  -- share of flags at F0 or F3, i.e. flags that imply a
+     >=2-stage annotation error. Lower is better; these are less plausible as
+     ordinary reader disagreement.
+  2. stability        -- share of a variant's flagged patients that are also
+     flagged in >= 80% of the 15 CoDA-GAT runs (5 seeds x 3
+     adversary modes), i.e. >= 12 of 15.
+  3. direction split  -- "recorded too low" (model says F2+, label says not)
+     vs "recorded too high" (model says not F2+, label says F2+).
+
+--------------------------------------------------------------------------------
+FLAG VARIANTS (all pre-specified; all will be reported)
+--------------------------------------------------------------------------------
+V1  baseline
+      disagreement > 0.5 AND uncertainty <= calibration p40
+      Seed-averaged p(F2+) and uncertainty over the 5 seeds of mode
+      'off'. This is Test A's rule, unchanged.
+
+V2  two-model agreement (one variant per tabular partner)
+      Flag iff CoDA-GAT AND the tabular model BOTH place the patient in the
+      opposite class with confidence beyond 0.8/0.2:
+        label says not-F2+  ->  p_gat > 0.8 AND p_tab > 0.8
+        label says F2+      ->  p_gat < 0.2 AND p_tab < 0.2
+      MC-dropout uncertainty is NOT used in this variant.
+      Partners, all reported: panel72_combined__catboost, panel72_combined__logreg, panel72_full__catboost, panel72_full__logreg
+      Primary partners (declared now, before results): panel72_combined__catboost, panel72_combined__logreg
+
+V3  stable
+      Flag iff the patient meets V1's rule in >= 12 of the 15 runs.
+      Each run uses its OWN calibration-derived p40 threshold.
+
+V4  graph comparison
+      V1's rule applied to real_graph, empty_graph and shuffled_graph. Weights
+      come from results_b7 (real) and graph_utility/control_checkpoints
+      (empty, shuffled) -- the checkpoints graph_utility.py retrained. MC-dropout
+      is recomputed by inference; nothing is retrained.
+
+--------------------------------------------------------------------------------
+RANKING, so flag counts match exactly
+--------------------------------------------------------------------------------
+To flag exactly N patients under any condition: restrict to patients with
+disagreement > 0.5 (the model contradicts the recorded label), then rank by
+MC-dropout uncertainty ASCENDING -- most confident contradiction first -- and
+take the top N. Ties broken by disagreement descending, then sample_id.
+Declared now because it decides the comparison. If a condition has fewer than N
+patients with disagreement > 0.5, the shortfall is reported, not padded.
+
+--------------------------------------------------------------------------------
+INFERENCE AND UNCERTAINTY
+--------------------------------------------------------------------------------
+  - 95% CIs by bootstrap over PATIENTS WITHIN COHORT: 2000 resamples, each
+    cohort resampled with replacement to its own original size, so cohort
+    composition is preserved. Flag sets are held FIXED across resamples; the
+    CI is on the enrichment measured over a resampled patient population.
+  - Odds ratios in CIs and paired contrasts use a Haldane-Anscombe +0.5
+    correction so an empty cell gives a finite value. Headline ORs and p-values
+    are exact Fisher on raw counts, uncorrected.
+  - Graph comparison: paired difference in log odds ratio, real minus control,
+    computed on the SAME resampled patients for both conditions. Verdict is
+    stated as better / equal / worse by whether the CI excludes zero.
+  - Per-cohort values reported for all 8 held-out cohorts. n = 8 is
+    underpowered; cross-cohort statements are descriptive.
+
+--------------------------------------------------------------------------------
+HARD RULES
+--------------------------------------------------------------------------------
+  1. The ordinal stage F0-F4 is used ONLY to evaluate flags, NEVER to create
+     them. Enforced by assert_no_stage_leak(), which fails the run if any rule
+     reads a field outside this whitelist:
+       disagreement, fold, n_runs_flagged, p_f2plus, p_tabular, sample_id, uncertainty, y_true
+  2. The uncertainty threshold comes from calibration cohorts only.
+  3. Every variant above is reported, including ones that do worse. No variant
+     is added, dropped or re-tuned after results are seen.
+  4. Inference only. No retraining.
+
+--------------------------------------------------------------------------------
+WHAT WOULD COUNT AS THE GRAPH HELPING
+--------------------------------------------------------------------------------
+Declared now to prevent a post-hoc reading: the real graph produces better
+flags iff the paired difference in log OR (real minus empty) has a 95% CI
+strictly above zero at a matched flag count. A CI containing zero is reported
+as "no difference detected", NOT as a trend in either direction.

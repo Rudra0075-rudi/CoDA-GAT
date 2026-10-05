@@ -1,0 +1,135 @@
+CoDA-GAT flagging v4 -- PRE-REGISTRATION
+written: 2026-09-22 21:19:45 +06
+script:  scripts/flagging_v4.py
+
+Written BEFORE any result in this analysis is computed, and never modified
+afterwards. If it already exists the script leaves it alone.
+
+================================================================================
+TASK 1 -- ENSEMBLE FLAGS AND SPLIT-HALF STABILITY
+================================================================================
+ENSEMBLE. Average p(F2+) and MC-dropout uncertainty over ALL 15 CoDA-GAT runs
+(5 seeds x 3 adversary modes: ['off', 'marginal', 'conditional']). Calibration uncertainty is pooled over
+the same 15 runs, and the threshold is its 40th percentile, per fold.
+
+RULES APPLIED to the ensemble:
+  (a) flagging_v2 V1: disagreement > 0.5 AND uncertainty <= calibration p40
+  (b) flagging_v3 Confident Learning, thresholds from the calibration cohort
+
+STABILITY BY SPLIT-HALF. 200 random partitions of the 15 runs into two
+disjoint groups of sizes (8, 7). Each group produces its own ensemble average,
+its own calibration threshold, and its own flag set at the SAME flag count
+(ranked by the flagging_v2 rule: disagreement > 0.5, then lowest uncertainty
+first). Statistic: Jaccard overlap between the two groups' flag sets. Reported
+as mean with a 95% percentile interval over the 200 splits.
+
+Flag counts, both pre-specified: [52, 192].
+
+COMPARISON. The same split-half procedure on the single-mode (off) pool of
+5 runs, split (3, 2).
+
+CONFOUND CONTROL, declared now because the comparison above is not like for
+like: (8, 7) halves contain more runs than (3, 2) halves, so the 15-run ensemble
+would look more stable purely from averaging more runs, regardless of whether
+mode diversity helps. A size-matched control is therefore also run: the 15-run
+pool split into disjoint groups of sizes (3, 2), identical in size to the
+single-mode split. Any stability difference that survives THAT comparison is
+attributable to diversity rather than to count.
+
+ALSO REPORTED for the ensemble flags: F1/F2 boundary enrichment odds ratio,
+two-stage share (F0 or F3), and direction split -- computed by the imported
+flagging_v2 functions so the numbers are comparable with v2 and v3.
+
+DECISION RULE: the ensemble is MORE STABLE than single-mode iff its mean
+split-half Jaccard exceeds the single-mode value AND the two 95% intervals do
+not overlap, in the size-matched comparison. Otherwise: "not more stable".
+
+================================================================================
+TASK 2 -- PLANTED-ERROR TEST
+================================================================================
+The first test in this project with a known ground truth. Models are UNCHANGED;
+only held-out test labels are altered.
+
+PLANTING. Flip binary F2+ labels of boundary patients in equal numbers:
+    recorded F1 -> F2+        (binary label 0 -> 1)
+    recorded F2 -> not-F2+  (binary label 1 -> 0)
+Total planting rates: 5%, 10%, 15% of all test patients, split equally between the
+two directions. 100 repeats per rate, seeds fixed and derived from
+20260924, so the identical planted set is given to every condition -- the
+real/empty/shuffled comparison is paired by construction.
+
+The ordinal stage selects WHICH labels to flip. That is an evaluation
+construct: flipping changes the BINARY label a rule sees, and gives no rule
+access to the stage. assert_no_stage_leak() still guards every rule.
+
+APPLIED PER REPEAT:
+  (a) the flagging_v2 rule at a matched flag count, identical across the three
+      conditions. Two pre-specified counts:
+        N = number of planted errors at that rate. Note in advance: with this
+            count precision and recall are arithmetically EQUAL, so it measures
+            ranking quality only, and will be reported as one number, not two.
+        N = 192 (the v2 18% operating point), where precision and recall
+            differ and are separately informative. This is the PRIMARY setting.
+  (b) Confident Learning with calibration-derived thresholds. Calibration
+      labels are NEVER flipped, so the thresholds are fixed across repeats;
+      only the confident joint and its calibration change.
+
+METRICS
+  recall     = share of planted errors that are flagged
+  precision  = share of flags that are planted errors
+  slope      = increase in CL's estimated noise rate per unit planted rate,
+               by OLS of CL rate on planted rate over {0, 5%, 10%, 15%} within each
+               repeat, giving 100 slopes; reported as mean with a 95%
+               percentile interval. A perfect detector with additive background
+               gives slope 1; slope 0 means CL is blind to planted error.
+  background = flag rate and CL noise rate at 0% planting.
+
+PAIRED DIFFERENCES: real minus empty for recall and precision, computed within
+repeat (same planted labels both arms), reported as mean with a 95% percentile
+interval over repeats. Shuffled-STRING is reported alongside as the control
+that separates connectivity from biology.
+
+DECISION RULE: the flagging rule DETECTS planted label error iff recall at the
+primary setting exceeds the background flag rate with non-overlapping 95%
+intervals. The graph HELPS iff the paired real-minus-empty difference in recall
+has a 95% interval strictly above zero.
+
+================================================================================
+TASK 3 -- DIRECTION BIAS
+================================================================================
+DESCRIPTIVE, per cohort: mean predicted p(F2+); predicted-positive share at
+threshold 0.5; recorded F2+ share. A gap between the second and third is an
+operating-point offset, not necessarily label noise.
+
+PRIOR CORRECTION. Per fold, choose tau so the CALIBRATION cohort's
+predicted-positive share equals its recorded F2+ share (tau is the
+(1 - recorded positive rate) quantile of the calibration probabilities). Apply
+that fold's tau to its test cohort. To feed this into Confident Learning, which
+takes probabilities rather than a threshold, apply the equivalent monotone
+prior shift
+        p' = w*p / (w*p + (1-p)),   w = (1 - tau) / tau
+which maps tau to exactly 0.5 and preserves ranking. Per-class CL thresholds
+are recomputed on the prior-shifted CALIBRATION probabilities.
+
+TEST: the flagging_v3 direction test -- exact two-sided binomial against 0.5 on
+the share of flags whose recorded label is "too high" -- before and after prior
+correction, pooled and per cohort with exact binomial intervals.
+
+DECISION RULE: the direction bias is an OPERATING-POINT ARTEFACT iff the
+pooled test is significant before correction and non-significant after. It is
+GENUINE ASYMMETRIC NOISE iff it remains significant after correction. If it is
+non-significant both before and after, there is no bias to explain.
+
+================================================================================
+HARD RULES
+================================================================================
+  1. The ordinal stage is used ONLY to evaluate flags and to choose which
+     labels to flip in Task 2. It NEVER creates a flag. Whitelist enforced by
+     assert_no_stage_leak():
+       disagreement, fold, n_runs_flagged, p_f2plus, p_tabular, sample_id, uncertainty, y_true
+  2. Thresholds come from calibration cohorts only.
+  3. Every result is reported at face value -- including if the ensemble is NOT
+     more stable, if recall is no better than background, or if the direction
+     bias persists after correction. No test is re-run with different settings
+     after its result is seen.
+  4. Inference only. No retraining; no model is loaded.
