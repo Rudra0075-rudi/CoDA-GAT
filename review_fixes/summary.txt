@@ -1,0 +1,288 @@
+==============================================================================
+CoDA-GAT review fixes
+==============================================================================
+Read-only on all results files. Writes only review_fixes/ and figures/.
+repo: /Users/rudramaitra/Desktop/CoDAGAT_preprocessed_handoff
+
+==============================================================================
+TASK 1 -- masking CIs recomputed with COHORT as the unit (n = 8)
+==============================================================================
+What changed, and why it matters
+------------------------------------------------------------------------------
+  OLD: one CI over 40 (cohort x masking-rate) cells, pooled across rates.
+  NEW: per masking rate, the network-minus-control difference is formed inside
+       each cohort, then a 95% t interval across the 8 cohorts.
+
+  The old interval was too narrow for a reason worth naming: masking rates within
+  a cohort share that cohort's samples, its labels and its trained weights, and
+  the gene subsets are nested draws over the same 72 genes. Five rates from one
+  cohort are five re-measurements, not five independent observations. Pooling them
+  inflated n from 8 to 40 and shrank every interval by roughly sqrt(5).
+
+  cells: 720  conditions: ['coexpr_graph', 'e2e_graph', 'random_graph', 'real_graph', 'shuffled_graph']
+  cohorts: 8  rates: [np.float64(0.0), np.float64(0.1), np.float64(0.2), np.float64(0.3), np.float64(0.4), np.float64(0.5)]
+
+STRING graph minus no-graph control -- metric = auc
+------------------------------------------------------------------------------
+    rate              level difference (n=8)               drop difference (n=8)
+      0%      -0.0044 [-0.0225, +0.0138] n=8                                   -
+     10%      -0.0062 [-0.0233, +0.0109] n=8      -0.0018 [-0.0045, +0.0009] n=8
+     20%      -0.0090 [-0.0309, +0.0129] n=8      -0.0046 [-0.0089, -0.0003] n=8
+     30%      -0.0085 [-0.0273, +0.0103] n=8      -0.0041 [-0.0088, +0.0006] n=8
+     40%      -0.0163 [-0.0380, +0.0054] n=8      -0.0119 [-0.0169, -0.0069] n=8
+     50%      -0.0203 [-0.0387, -0.0019] n=8      -0.0160 [-0.0204, -0.0115] n=8
+
+STRING graph minus no-graph control -- metric = macro_f1
+------------------------------------------------------------------------------
+    rate              level difference (n=8)               drop difference (n=8)
+      0%      -0.0240 [-0.0631, +0.0152] n=8                                   -
+     10%      -0.0235 [-0.0625, +0.0154] n=8      +0.0004 [-0.0098, +0.0106] n=8
+     20%      -0.0209 [-0.0641, +0.0223] n=8      +0.0030 [-0.0114, +0.0174] n=8
+     30%      -0.0176 [-0.0626, +0.0273] n=8      +0.0063 [-0.0188, +0.0314] n=8
+     40%      -0.0084 [-0.0591, +0.0422] n=8      +0.0155 [-0.0164, +0.0474] n=8
+     50%      +0.0031 [-0.0557, +0.0620] n=8      +0.0271 [-0.0162, +0.0704] n=8
+
+STRING graph minus no-graph control -- metric = balanced_acc
+------------------------------------------------------------------------------
+    rate              level difference (n=8)               drop difference (n=8)
+      0%      -0.0166 [-0.0492, +0.0161] n=8                                   -
+     10%      -0.0156 [-0.0469, +0.0158] n=8      +0.0010 [-0.0082, +0.0103] n=8
+     20%      -0.0134 [-0.0483, +0.0216] n=8      +0.0032 [-0.0089, +0.0153] n=8
+     30%      -0.0094 [-0.0421, +0.0233] n=8      +0.0072 [-0.0143, +0.0287] n=8
+     40%      -0.0028 [-0.0378, +0.0323] n=8      +0.0138 [-0.0109, +0.0386] n=8
+     50%      +0.0052 [-0.0320, +0.0423] n=8      +0.0217 [-0.0095, +0.0530] n=8
+
+Effect of the correction, at the endpoint (50% of genes hidden)
+------------------------------------------------------------------------------
+  auc           cohort-unit @50%: -0.0160 [-0.0204, -0.0115] n=8
+                old 40-cell pool : -0.0077 [-0.0100, -0.0053] n=40   <- n inflated 8 -> 40
+  macro_f1      cohort-unit @50%: +0.0271 [-0.0162, +0.0704] n=8
+                old 40-cell pool : +0.0105 [-0.0000, +0.0210] n=40   <- n inflated 8 -> 40
+  balanced_acc  cohort-unit @50%: +0.0217 [-0.0095, +0.0530] n=8
+                old 40-cell pool : +0.0094 [+0.0013, +0.0175] n=40   <- n inflated 8 -> 40
+
+VERDICT (Task 1)
+------------------------------------------------------------------------------
+  auc          : 3 of 5 masking rates have a cohort-unit CI excluding zero
+  macro_f1     : 0 of 5 masking rates have a cohort-unit CI excluding zero
+  balanced_acc : 0 of 5 masking rates have a cohort-unit CI excluding zero
+  With the correct unit the intervals widen and most of them cover zero. The
+  qualitative pattern survives -- AUC favours the control, the threshold metrics
+  favour the graph -- but at n=8 cohorts it is a DIRECTIONAL observation, not a
+  demonstrated effect. The earlier narrow intervals overstated the evidence.
+
+==============================================================================
+TASK 2 -- between-family vs between-variant-group error agreement
+==============================================================================
+Both numbers, side by side
+------------------------------------------------------------------------------
+  level=architecture_family  relation=between  (3 blocks, 159 model pairs)
+      Jaccard, block-averaged : 0.4386   (excess over chance +0.2729)
+      Jaccard, pair-weighted  : 0.4407   (excess over chance +0.2756)
+      MCC,     block-averaged : 0.4523
+      blocks: gat vs linear=0.3925; gat vs tree_ensemble=0.4395; linear vs tree_ensemble=0.4838
+
+  level=architecture_family  relation=within   (3 blocks, 94 model pairs)
+      Jaccard, block-averaged : 0.6380   (excess over chance +0.4722)
+      Jaccard, pair-weighted  : 0.6363   (excess over chance +0.4710)
+      MCC,     block-averaged : 0.6693
+      blocks: gat vs gat=0.7338; linear vs linear=0.6061; tree_ensemble vs tree_ensemble=0.5741
+
+  level=variant_group        relation=between  (21 blocks, 225 model pairs)
+      Jaccard, block-averaged : 0.5003   (excess over chance +0.3351)
+      Jaccard, pair-weighted  : 0.4976   (excess over chance +0.3325)
+      MCC,     block-averaged : 0.5246
+      blocks: boruta_lasso vs codagat_core=0.4515; boruta_lasso vs feature_ablated=0.4444; boruta_lasso vs graph_corrupted=0.4275; boruta_lasso vs tabular_bulk_top1000=0.5638; boruta_lasso vs tabular_panel72_combined=0.4853; boruta_lasso vs tabular_panel72_full=0.4884; codagat_core vs feature_ablated=0.7679; codagat_core vs graph_corrupted=0.7226; codagat_core vs tabular_bulk_top1000=0.4222; codagat_core vs tabular_panel72_combined=0.4665; codagat_core vs tabular_panel72_full=0.4259; feature_ablated vs graph_corrupted=0.6809; feature_ablated vs tabular_bulk_top1000=0.4185; feature_ablated vs tabular_panel72_combined=0.4472; feature_ablated vs tabular_panel72_full=0.4117; graph_corrupted vs tabular_bulk_top1000=0.3936; graph_corrupted vs tabular_panel72_combined=0.4476; graph_corrupted vs tabular_panel72_full=0.4136; tabular_bulk_top1000 vs tabular_panel72_combined=0.4816; tabular_bulk_top1000 vs tabular_panel72_full=0.4966; tabular_panel72_combined vs tabular_panel72_full=0.6477
+
+  level=variant_group        relation=within   (7 blocks, 28 model pairs)
+      Jaccard, block-averaged : 0.6768   (excess over chance +0.5115)
+      Jaccard, pair-weighted  : 0.6398   (excess over chance +0.4743)
+      MCC,     block-averaged : 0.7203
+      blocks: boruta_lasso vs boruta_lasso=0.7273; codagat_core vs codagat_core=0.9032; feature_ablated vs feature_ablated=0.6664; graph_corrupted vs graph_corrupted=0.7222; tabular_bulk_top1000 vs tabular_bulk_top1000=0.5186; tabular_panel72_combined vs tabular_panel72_combined=0.5865; tabular_panel72_full vs tabular_panel72_full=0.6136
+
+The answer to 'which one does fig18 plot?'
+------------------------------------------------------------------------------
+  fig18 in make_figures.py already filters to level == 'architecture_family',
+  falling back to 'variant_group' only if that level is absent. It is not absent,
+  so fig18 has been plotting the FAMILY level all along -- the caption was right.
+
+  The real inconsistency is finer: it plots the saved `between` row, which is
+  PAIR-WEIGHTED, while a claim about 'linear vs tree vs GAT' is a statement about
+  the three family BLOCKS. With 9 GAT, 11 tree and 3 linear models the cross-family
+  pairs split 99 / 33 / 27, so the pair-weighted mean is 62% the gat-vs-tree block.
+
+  between-FAMILY (linear vs tree vs GAT), averaged over the 3 family blocks:
+      Jaccard 0.4386  vs chance 0.1657  excess +0.2729
+      pair-weighted equivalent: 0.4407 (difference -0.0021)
+
+  between-VARIANT-GROUP (feature view / ablation / corruption groups):
+      Jaccard 0.5003 block-averaged, 0.4976 pair-weighted
+
+  The variant-group value is the HIGHER of the two, and necessarily so: its
+  'between' set still contains many GAT-vs-GAT comparisons (a graph-corrupted
+  model against a feature-ablated model sits in different variant groups but the
+  same architecture family). Quoting it as evidence that architecturally
+  different models fail together would overstate the case. The family-level
+  block-averaged number is the defensible one, and fig18 now uses it.
+
+  fig18 is regenerated with the block-averaged family values, the three individual
+  block values overlaid as points so their spread is visible, and the pair-weighted
+  and variant-group numbers annotated for comparison.
+
+==============================================================================
+TASK 3 -- LAC prediction-set size distribution (mode = off, m = 0)
+==============================================================================
+Reproduction check against master_results.csv
+------------------------------------------------------------------------------
+  alpha=0.05: 40 runs, max |mean set size - saved| = 2.22e-16
+  alpha=0.10: 40 runs, max |mean set size - saved| = 2.22e-16
+  alpha=0.20: 40 runs, max |mean set size - saved| = 2.22e-16
+  The recomputed sets reproduce the saved mean set size, so the distribution
+  below is a decomposition of the published number, not a different quantity.
+
+Pooled over all 8 cohorts x 5 seeds
+------------------------------------------------------------------------------
+   alpha    size 0    size 1    size 2  mean size  coverage          q_hat range
+    0.05     0.0%    30.4%    69.6%      1.696    94.7%       [0.726, 0.904]
+    0.10     0.0%    53.0%    47.0%      1.470    88.9%       [0.561, 0.840]
+    0.20     0.2%    75.7%    24.0%      1.238    79.9%       [0.442, 0.715]
+  (5320 patient-predictions per alpha = 1064 held-out patients x 5 seeds)
+
+Per held-out cohort
+------------------------------------------------------------------------------
+  alpha = 0.05   (nominal coverage 95%)
+    cohort           n   size 0   size 1   size 2    mean   cover   q_hat
+    GSE130970       78    0.0%   38.2%   61.8%   1.618  88.2%   0.784
+    GSE135251      206    0.0%   21.8%   78.2%   1.782  98.3%   0.847
+    GSE162694      112    0.0%   37.1%   62.9%   1.629  91.2%   0.797
+    GSE193066      106    0.0%   34.2%   65.8%   1.658  94.9%   0.810
+    GSE213621      299    0.0%   32.3%   67.7%   1.677  95.7%   0.830
+    GSE240729       67    0.0%   46.0%   54.0%   1.540  94.0%   0.749
+    GSE31803        72    0.0%   24.2%   75.8%   1.758  98.6%   0.821
+    GSE84044       124    0.0%   21.0%   79.0%   1.790  96.9%   0.891
+
+  alpha = 0.10   (nominal coverage 90%)
+    cohort           n   size 0   size 1   size 2    mean   cover   q_hat
+    GSE130970       78    0.0%   54.9%   45.1%   1.451  81.8%   0.700
+    GSE135251      206    0.0%   36.9%   63.1%   1.631  96.1%   0.779
+    GSE162694      112    0.0%   55.2%   44.8%   1.448  84.5%   0.722
+    GSE193066      106    0.0%   57.5%   42.5%   1.425  89.8%   0.737
+    GSE213621      299    0.0%   58.9%   41.1%   1.411  88.3%   0.717
+    GSE240729       67    0.0%   82.4%   17.6%   1.176  82.4%   0.595
+    GSE31803        72    0.0%   41.1%   58.9%   1.589  95.6%   0.749
+    GSE84044       124    0.0%   49.8%   50.2%   1.502  92.4%   0.797
+
+  alpha = 0.20   (nominal coverage 80%)
+    cohort           n   size 0   size 1   size 2    mean   cover   q_hat
+    GSE130970       78    0.0%   85.1%   14.9%   1.149  68.2%   0.558
+    GSE135251      206    0.0%   59.9%   40.1%   1.401  90.0%   0.679
+    GSE162694      112    0.0%   88.9%   11.1%   1.111  72.0%   0.571
+    GSE193066      106    0.0%   81.3%   18.7%   1.187  80.2%   0.610
+    GSE213621      299    0.0%   73.7%   26.3%   1.263  83.6%   0.638
+    GSE240729       67    3.9%   95.5%    0.6%   0.967  73.7%   0.484
+    GSE31803        72    0.0%   71.4%   28.6%   1.286  89.7%   0.624
+    GSE84044       124    0.0%   76.0%   24.0%   1.240  81.9%   0.660
+
+VERDICT (Task 3)
+------------------------------------------------------------------------------
+  13 empty prediction sets occur (0.08% of all predictions). These arise
+  where q_hat < 0.5 and are genuine abstentions: the method declines to name any
+  class. They must be reported separately, because a mean set size near 1 can be
+  produced either by confident singletons or by a mix of empty and full sets.
+  This is the contrast with APS, which was degenerate: APS returned size 2 for
+  100% of patients at every alpha. LAC's distribution genuinely varies with alpha,
+  which is what makes its coverage numbers meaningful.
+
+==============================================================================
+TASK 4 -- label-noise ceiling from published inter-rater kappa
+==============================================================================
+Why the previous ceiling was replaced
+------------------------------------------------------------------------------
+  The old figure inverted an OBSERVED AUC (0.902) to a latent noise sigma (0.663)
+  and called the result a ceiling. That is circular twice over. First, it assumes
+  the best model already sits AT the ceiling -- which is the proposition the
+  ceiling argument exists to test, so the conclusion is smuggled into the premise.
+  Second, 0.902 was not even a cross-cohort number: it is panel72_combined__logreg
+  on GSE130970 alone (see figures/diagnosis.txt), and that model's true 8-cohort
+  mean is 0.838. An inversion anchored on the single most favourable cohort
+  produces a ceiling that flatters whatever is compared against it.
+
+  The replacement runs in the opposite direction: published inter-rater agreement
+  for fibrosis staging goes IN, and the ceiling comes OUT. No observed AUC of ours
+  appears anywhere in the calculation.
+
+The model, stated in full so it can be disagreed with
+------------------------------------------------------------------------------
+  1. Each patient has a latent fibrosis severity z ~ N(0, 1).
+  2. A pathologist reads the biopsy and observes z + e, e ~ N(0, sigma^2),
+     independently for each reader. sigma is the only free parameter.
+  3. Both an ideal reader (reading z) and a real reader (reading z + e) assign
+     F0-F4 using the cut points that reproduce the OBSERVED stage marginal on
+     their own scale, so the stage distribution stays fixed as sigma varies.
+  4. sigma is chosen so that two independent readers reproduce the published
+     weighted kappa. This is done exactly, from the bivariate-normal stage table,
+     not by simulation.
+  5. Ceiling AUC is then the AUC of a model that recovers z PERFECTLY, scored
+     against one reader's F2+ call -- the label our models are trained on.
+
+  Assumptions that matter: normal latent severity, additive homoscedastic reader
+  noise, and thresholds shared across readers. Real staging noise is probably
+  worse at the middle stages than at F0 or F4, which this model does not capture.
+  It is a first-order estimate and should be quoted as a range, not a line.
+
+Empirical inputs
+------------------------------------------------------------------------------
+  stage marginal, exact labels only (n=1063): {'F0': np.float64(0.2079), 'F1': np.float64(0.2051), 'F2': np.float64(0.2822), 'F3': np.float64(0.1515), 'F4': np.float64(0.1533)}
+  stage marginal, all supervised  (n=1366): {'F0': np.float64(0.2906), 'F1': np.float64(0.1596), 'F2': np.float64(0.2196), 'F3': np.float64(0.2108), 'F4': np.float64(0.1193)}
+  F2+ prevalence: exact 0.5870, all 0.5498
+  F2+ cut point on the latent scale: exact a=-0.2199, all a=-0.1251
+  published weighted kappa values used: [0.47, 0.53, 0.59]
+  Monte Carlo for ceiling AUC: 5 replicates x 400,000 patients
+
+Results (primary: exact-labels marginal)
+------------------------------------------------------------------------------
+   weighting  kappa   sigma    ceiling AUC  F2+ misassign  reader-reader
+      linear   0.47   0.657    0.9038+/-0.0001         18.0%         24.7%
+      linear   0.53   0.560    0.9244+/-0.0001         15.8%         21.9%
+      linear   0.59   0.473    0.9424+/-0.0001         13.7%         19.1%
+   quadratic   0.47   0.971    0.8402+/-0.0002         23.9%         31.9%
+   quadratic   0.53   0.854    0.8629+/-0.0002         21.9%         29.6%
+   quadratic   0.59   0.749    0.8844+/-0.0002         20.0%         27.1%
+
+Same, using all supervised labels including the grouped ones
+------------------------------------------------------------------------------
+      linear   0.47   0.665    0.9011+/-0.0002         18.5%         25.4%
+      linear   0.53   0.567    0.9223+/-0.0001         16.3%         22.5%
+      linear   0.59   0.478    0.9407+/-0.0002         14.1%         19.6%
+   quadratic   0.47   0.955    0.8424+/-0.0003         24.1%         32.2%
+   quadratic   0.53   0.840    0.8648+/-0.0002         22.1%         29.8%
+   quadratic   0.59   0.736    0.8863+/-0.0002         20.0%         27.3%
+
+VERDICT (Task 4)
+------------------------------------------------------------------------------
+  Implied ceiling AUC across kappa = [0.47, 0.53, 0.59] and both weightings: 0.840 to 0.942
+  Implied F2+ misassignment rate: 13.7% to 23.9%
+
+  Quadratic weighting always implies MORE noise than linear at the same kappa,
+  because quadratic weights forgive one-stage disagreements almost entirely; so
+  reproducing a given kappa under quadratic weighting requires a larger sigma and
+  yields a lower ceiling. The two weightings bracket the honest range, which is
+  why both are reported rather than one being chosen.
+
+  figures/ currently shades a ceiling band of 0.87-0.9, which
+  came from the discarded AUC inversion. This simulation does not support that band.
+  The band is NOT changed by this script -- CEILING lives in make_figures.py and
+  editing it would silently move a reference line in figures 4 and 5. Change it
+  deliberately, or drop the band and quote the range in the caption instead.
+
+==============================================================================
+FILES WRITTEN
+==============================================================================
+  review_fixes/summary.txt
+  review_fixes/task1_masking_cohort_unit.csv
+  review_fixes/task1_masking_cohort_unit_summary.csv
+  review_fixes/task2_agreement_levels.csv
+  review_fixes/task3_lac_set_sizes_per_cohort.csv
+  review_fixes/task3_lac_set_sizes_per_run.csv
+  review_fixes/task3_lac_set_sizes_pooled.csv
+  review_fixes/task4_latent_noise_ceiling.csv

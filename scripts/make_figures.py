@@ -52,7 +52,7 @@ OUT = REPO / "figures"
 OKABE = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9", "#D55E00", "#F0E442", "#000000"]
 CODAGAT = "#D55E00"       # CoDA-GAT highlight -- identical in every figure
 NEUTRAL = "#9AA0A6"
-CEILING = (0.87, 0.90)    # label-noise ceiling band
+CEILING = (0.84, 0.94)    # label-noise ceiling band
 
 plt.rcParams.update({
     "figure.dpi": 110, "savefig.dpi": 300, "savefig.bbox": "tight",
