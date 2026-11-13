@@ -29,20 +29,17 @@ files in this repository.
 | CoDA-GAT (primary configuration: adversary off, m=0) | **0.822 ± 0.030** |
 | Empty graph (same network, no edges) | 0.827 ± 0.044 |
 | Shuffled STRING graph | 0.829 ± 0.050 |
-| *Estimated label-noise ceiling* | *0.87 – 0.90* |
 
 Three things follow, and we state them plainly:
 
-1. **CoDA-GAT does not beat a well-tuned gradient-boosted baseline.** Both sit a little below
-   the label ceiling implied by inter-pathologist agreement on fibrosis staging. The task, as
-   labelled, appears to be near its information limit rather than near a modelling limit.
-2. **The STRING graph contributes nothing to accuracy.** Empty, shuffled and random graphs
+1. **CoDA-GAT does not beat a well-tuned gradient-boosted baseline.** These results do not establish an accuracy ceiling or prove that disputed labels are wrong.
+2. **The STRING graph did not improve mean AUC in these experiments.** Empty, shuffled and random graphs
    tie or narrowly beat the real biological topology. This is reproduced independently in
    `ablations_b9/`, `graph_utility/` and `learned_graph/`.
 3. **Graphs learned from the data do not rescue it either.** Co-expression and end-to-end
    learned topologies, held to STRING's exact edge budget, do not beat the empty graph under
    masking. The end-to-end variant's overlap with STRING (Jaccard 0.063) is at chance, and its
-   cross-fold stability (0.312) is what fitting noise looks like.
+   cross-fold stability is 0.312. These observations alone do not establish the cause of instability.
 
 The one place the graph does something measurable is **robustness to missing genes**, and even
 there the result is metric-dependent and is reported as such:
@@ -62,8 +59,7 @@ There is no single-number "robustness advantage", and any claim of one has to na
 Node features are a (72 genes × 26 features) tensor per sample: 8 dynamic + 9 static +
 9 fold-fitted. The graph is 72 nodes and 321 undirected STRING edges at confidence ≥ 700.
 
-Each fold's calibration set is a **single separate cohort**, never a random split — this is
-what makes the conformal guarantee meaningful under cohort shift.
+Each fold's calibration set is a **single separate cohort**, never a random split — coverage must still be evaluated empirically under cohort shift; using a separate cohort does not itself establish exchangeability or a coverage guarantee.
 
 See `README.txt` for the dataset layout and loading instructions, and
 `FLAT_VIEW_WARNING.txt` for why the top-level `train/`, `calibration/` and `test/` folders
@@ -76,7 +72,7 @@ text pointers. Everything else is plain git.
 ## Layout
 
 ```
-scripts/              all 20 analysis scripts (see below)
+scripts/              training and analysis scripts (see below)
 shared/               graph, gene panel, labels, expression matrices  [LFS]
 folds/foldN_GSE*/     the LODO protocol: train/ calibration/ test/
 results_b7/           the main 120-run experiment (8 folds x 3 modes x 5 seeds)
@@ -131,11 +127,16 @@ python scripts/fix_figures.py             # diagnosis + corrected figs 4,5,11-14
 - **`graph_utility/summary.txt` was overwritten by a partial re-run** and retains only its
   TEST 3 section.
 - **Cross-fold statements are underpowered at n=8** and are descriptive, not confirmatory.
-  Sample-level statements (n ≈ 1,064) are adequately powered. This distinction is enforced in
-  the analysis scripts rather than left to the reader.
+  Sample-level analyses must also account for dependence within cohorts; a larger patient count alone does not establish adequate power.
 
 ## Licence and data provenance
 
 All expression data derives from public GEO accessions (GSE130970, GSE135251, GSE162694,
 GSE193066, GSE213621, GSE240729, GSE31803, GSE84044, and others). Please cite the original
 studies for the data. The code in `scripts/` is released for academic use.
+
+## Project context
+
+This repository records undergraduate thesis experiments on graph learning for liver fibrosis staging. The accepted iCACCESS 2026 paper **Graph Attention Versus Tabular Models for Early Liver Fibrosis Staging: A Leakage-Controlled Multi-Cohort Benchmark** is a separate research output; do not assume its dataset, protocol or results are identical to this repository.
+
+Research code only; not validated for clinical diagnosis. The empirical results above are retained from the existing experiment record and were not rerun during the documentation update.
