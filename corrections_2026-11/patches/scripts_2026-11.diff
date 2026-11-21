@@ -1,0 +1,1108 @@
+ scripts/consensus_failures.py | 266 +++++++++++++++++++++++++++---------------
+ scripts/flagging_v2.py        |  49 +++++---
+ scripts/flagging_v3.py        |   7 +-
+ scripts/flagging_v4.py        |   1 +
+ scripts/h2_decision_b4.py     |  25 +++-
+ scripts/test_a_adjacency.py   |  70 +++++------
+ scripts/test_b_rate.py        |  34 ++++--
+ scripts/train_fold0_b1.py     |  14 ++-
+ 8 files changed, 295 insertions(+), 171 deletions(-)
+
+diff --git a/scripts/consensus_failures.py b/scripts/consensus_failures.py
+index 933e9ce..86b1619 100644
+--- a/scripts/consensus_failures.py
++++ b/scripts/consensus_failures.py
+@@ -25,6 +25,22 @@ feature tensor cannot distinguish label error from shared-input correlation.
+ The adjacency result is still computed and reported as a descriptive finding.
+ 
+ No retraining, no threshold re-tuning. Saved predictions only.
++
++2026-11 AUDIT CORRECTIONS (retrospective; not part of any preregistration):
++  1. Baseline error sets use each model's SAVED pred_test column. The
++     historical run re-derived decisions as p_test >= threshold after a
++     default-precision CSV parse, which flipped 5 bulk_top1000__random_forest
++     decisions whose probability equals the threshold in decimal. The saved
++     column was computed in memory before the CSV write and is authoritative;
++     it is checked here against a round-trip-precision parse. The GAT
++     ensemble decision is unchanged: 5-seed mean P(F2+) >= 0.5.
++  2. Stage-level tests use exact-stage records only (stage_labels.py);
++     grouped F0-F1 / F3-F4 records stay in every binary-error quantity.
++  3. The analytical independence expectation and the within-fold permutation
++     null are reported as two different references, and between-group means
++     are given both pair-weighted and with equal weight per group pair.
++  4. Results go to --out-dir; the historical consensus_failures/ is never
++     overwritten.
+ """
+ 
+ import os
+@@ -34,6 +50,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
+ import argparse
+ import itertools
+ import json
++import re
+ from pathlib import Path
+ 
+ import numpy as np
+@@ -41,7 +58,7 @@ import pandas as pd
+ 
+ from sklearn.metrics import matthews_corrcoef
+ 
+-from test_a_adjacency import enrichment_test, parse_fold_index, ADJACENT_STAGES
++from stage_labels import enrichment_test, grouped_table, ADJACENT_STAGES, GROUPED_RESOLUTIONS
+ 
+ REPO_ROOT = Path(__file__).resolve().parent.parent
+ FOLDS_DIR = REPO_ROOT / "folds"
+@@ -121,6 +138,13 @@ def log(msg):
+     print(f"[consensus] {msg}", flush=True)
+ 
+ 
++def parse_fold_index(dir_name: str) -> int:
++    m = re.match(r"fold(\d+)_", dir_name)
++    if not m:
++        raise ValueError(f"cannot parse fold index from directory name: {dir_name}")
++    return int(m.group(1))
++
++
+ # ==========================================================================
+ # Discovery + loading (saved predictions only)
+ # ==========================================================================
+@@ -148,12 +172,17 @@ def run_dir_for(spec, fold_id, test_cohort, seed):
+ def load_baselines_csv_probs(name, spec, index_df):
+     """
+     Reads B3's persisted per-sample CSVs and aligns them to index_df's sample
+-    order. Returns (p_test, per-sample threshold).
++    order. Returns (p_test, per-sample threshold, saved decision, saved y_true).
+ 
+     These models were run at a SINGLE seed (B3's default, 42) and evaluated at
+-    a calibration-tuned threshold. Both facts are preserved here, not changed:
+-    the threshold comes from the file, so each model's error set matches how it
+-    was originally evaluated.
++    a calibration-tuned threshold. The decision is the saved pred_test column,
++    which baselines_b3.py computed in memory as p_test >= threshold before the
++    CSV write -- so each model's error set is exactly how it was originally
++    evaluated. Re-deriving it from the CSV text is not equivalent: the tuned
++    thresholds come from np.arange (e.g. 0.45000000000000007), and a
++    default-precision parse can round a probability of 0.45 and that threshold
++    to the same double. A round-trip parse must reproduce the saved column;
++    any disagreement is a hard error, not a silent fallback.
+     """
+     frames = []
+     for (fold_id, test_cohort), grp in index_df.groupby(["fold", "test_cohort"], sort=True):
+@@ -161,20 +190,30 @@ def load_baselines_csv_probs(name, spec, index_df):
+         if not path.exists():
+             log(f"    {name}: MISSING {path.relative_to(REPO_ROOT)} -- excluding this model")
+             return None
+-        df = pd.read_csv(path)
++        df = pd.read_csv(path, float_precision="round_trip")
+         absent = set(grp["sample_id"]) - set(df["sample_id"])
+         if absent:
+             log(f"    {name}: {len(absent)} sample_id(s) absent at fold {fold_id} -- excluding")
+             return None
++        if df["sample_id"].tolist() != grp["sample_id"].tolist():
++            log(f"    {name}: fold {fold_id} rows are not in sample_ids.csv order -- realigned by sample_id")
+         frames.append(df.set_index("sample_id").loc[grp["sample_id"]].reset_index())
+     out = pd.concat(frames, ignore_index=True)
+-    return out["p_test"].to_numpy(dtype=float), out["threshold"].to_numpy(dtype=float)
++    p, thr = out["p_test"].to_numpy(dtype=float), out["threshold"].to_numpy(dtype=float)
++    pred = out["pred_test"].to_numpy(dtype=int)
++    mismatch = int(((p >= thr).astype(int) != pred).sum())
++    if mismatch:
++        raise RuntimeError(f"{name}: {mismatch} saved pred_test values disagree with p_test >= threshold "
++                           f"under round-trip parsing -- threshold convention not reproduced")
++    return p, thr, pred, out["y_true"].to_numpy(dtype=int)
+ 
+ 
+ def load_model_probs(name, spec, index_df, seeds):
+-    """Returns (P(F2+) per test sample, per-sample decision threshold), or None.
+-    B7/B9 models are seed-averaged .npy and were evaluated at argmax (0.5);
+-    B3 baselines are single-seed CSV carrying their own tuned threshold."""
++    """Returns (P(F2+), per-sample threshold, decision, saved y_true or None), or None.
++    B7/B9 models are seed-averaged .npy; their ensemble decision is the
++    5-seed mean P(F2+) >= 0.5 (the original definition, unchanged).
++    B3 baselines are single-seed CSV carrying their own tuned threshold and
++    their saved decision."""
+     if spec["source"] == "baselines_csv":
+         return load_baselines_csv_probs(name, spec, index_df)
+ 
+@@ -195,7 +234,8 @@ def load_model_probs(name, spec, index_df, seeds):
+             seed_probs.append(probs[:, 1])
+         per_fold.append(np.mean(seed_probs, axis=0))
+     p = np.concatenate(per_fold)
+-    return p, np.full(len(p), DECISION_THRESHOLD)
++    thr = np.full(len(p), DECISION_THRESHOLD)
++    return p, thr, (p >= thr).astype(int), None
+ 
+ 
+ # ==========================================================================
+@@ -267,8 +307,29 @@ def agreement_analysis(err_matrix, model_names, fold_ids, n_perm, seed=0):
+     return pair_df, rates
+ 
+ 
++def _summary_row(level, relation, sub, weighting):
++    return {
++        "level": level, "relation": relation, "weighting": weighting, "n_pairs": len(sub),
++        "mean_jaccard_observed": float(sub["jaccard_observed"].mean()),
++        # analytical reference: E[Jaccard] if the two error sets were independent
++        # with the models' pooled error rates (no fold structure)
++        "mean_jaccard_expected_chance": float(sub["jaccard_expected_chance"].mean()),
++        "mean_jaccard_excess": float(sub["jaccard_excess"].mean()),
++        # empirical reference: within-fold permutation null mean
++        "mean_jaccard_perm_null_mean": float(sub["jaccard_perm_null_mean"].mean()),
++        "mean_jaccard_excess_vs_perm": float((sub["jaccard_observed"] - sub["jaccard_perm_null_mean"]).mean()),
++        "mean_mcc": float(sub["mcc"].mean()),
++        "mean_perm_z": float(sub["jaccard_perm_z"].mean()),
++    }
++
++
+ def group_summary(pair_df, registry, level_key):
+-    """Within- vs between-group agreement at the requested grouping level."""
++    """Within- vs between-group agreement at the requested grouping level.
++
++    weighting="pair": every model pair counts once (groups with many models
++    dominate). weighting="equal_group_pair": first average within each
++    unordered group pair, then average those means, so e.g. gat-vs-tree
++    (99 pairs) and gat-vs-linear (27 pairs) count equally."""
+     def grp(m):
+         return registry[m][level_key]
+ 
+@@ -279,28 +340,25 @@ def group_summary(pair_df, registry, level_key):
+     pair_df["relation"] = np.where(pair_df["group_a"] == pair_df["group_b"], "within", "between")
+ 
+     for relation, sub in pair_df.groupby("relation"):
+-        rows.append({
+-            "level": level_key, "relation": relation, "n_pairs": len(sub),
+-            "mean_jaccard_observed": float(sub["jaccard_observed"].mean()),
+-            "mean_jaccard_expected_chance": float(sub["jaccard_expected_chance"].mean()),
+-            "mean_jaccard_excess": float(sub["jaccard_excess"].mean()),
+-            "mean_mcc": float(sub["mcc"].mean()),
+-            "mean_perm_z": float(sub["jaccard_perm_z"].mean()),
+-        })
++        rows.append(_summary_row(level_key, relation, sub, "pair"))
+ 
+     # unordered group-pair key, built explicitly -- a DataFrame.min(axis=1) over
+     # string columns is not reliably supported across pandas versions
+     pair_df["_g1"] = [min(a, b) for a, b in zip(pair_df["group_a"], pair_df["group_b"])]
+     pair_df["_g2"] = [max(a, b) for a, b in zip(pair_df["group_a"], pair_df["group_b"])]
++    pairwise_rows = []
+     for (ga, gb), sub in pair_df.groupby(["_g1", "_g2"]):
+-        rows.append({
+-            "level": f"{level_key}_pairwise", "relation": f"{ga} vs {gb}", "n_pairs": len(sub),
+-            "mean_jaccard_observed": float(sub["jaccard_observed"].mean()),
+-            "mean_jaccard_expected_chance": float(sub["jaccard_expected_chance"].mean()),
+-            "mean_jaccard_excess": float(sub["jaccard_excess"].mean()),
+-            "mean_mcc": float(sub["mcc"].mean()),
+-            "mean_perm_z": float(sub["jaccard_perm_z"].mean()),
+-        })
++        r = _summary_row(f"{level_key}_pairwise", f"{ga} vs {gb}", sub, "pair")
++        r["relation_kind"] = "within" if ga == gb else "between"
++        pairwise_rows.append(r)
++    pw = pd.DataFrame(pairwise_rows)
++    value_cols = [c for c in pw.columns if c.startswith("mean_")]
++    for kind, sub in pw.groupby("relation_kind"):
++        r = {"level": level_key, "relation": kind, "weighting": "equal_group_pair",
++             "n_pairs": int(sub["n_pairs"].sum()), "n_group_pairs": len(sub)}
++        r.update({c: float(sub[c].mean()) for c in value_cols})
++        rows.append(r)
++    rows += pw.drop(columns="relation_kind").to_dict("records")
+     return pd.DataFrame(rows)
+ 
+ 
+@@ -313,9 +371,15 @@ def main():
+     parser.add_argument("--n-permutations", type=int, default=N_PERMUTATIONS)
+     parser.add_argument("--consensus-level", type=float, default=PRIMARY_CONSENSUS_LEVEL,
+                          help="fraction of models that must be wrong to call a sample a consensus failure")
++    parser.add_argument("--out-dir", type=Path, default=OUT_DIR,
++                        help="where to write results; the historical consensus_failures/ is never overwritten")
+     args = parser.parse_args()
+ 
+-    OUT_DIR.mkdir(parents=True, exist_ok=True)
++    out_dir = args.out_dir
++    if (out_dir / "error_matrix.csv").exists():
++        raise SystemExit(f"{out_dir / 'error_matrix.csv'} already exists (historical record). "
++                         f"Refusing to overwrite it; pass --out-dir <new directory>.")
++    out_dir.mkdir(parents=True, exist_ok=True)
+ 
+     log("Model-agreement / consensus-failure analysis (saved predictions only, no retraining)")
+ 
+@@ -326,13 +390,16 @@ def main():
+     labels_df = pd.read_parquet(SHARED_DIR / "labels.parquet")
+     index_df["y_true"] = labels_df.loc[index_df["sample_id"], "y_T1_significant"].to_numpy().astype(int)
+     index_df["stage"] = labels_df.loc[index_df["sample_id"], "stage"].to_numpy()
++    index_df["resolution"] = labels_df.loc[index_df["sample_id"], "resolution"].to_numpy()
+ 
+     log("discovering models with SAVED per-sample predictions...")
+-    probs, thresholds, used_specs, missing = {}, {}, {}, {}
++    probs, thresholds, decisions, used_specs, missing = {}, {}, {}, {}, {}
+     for name, spec in MODEL_REGISTRY.items():
+         loaded = load_model_probs(name, spec, index_df, args.seeds)
+         if loaded is not None:
+-            probs[name], thresholds[name] = loaded
++            probs[name], thresholds[name], decisions[name], saved_y = loaded
++            if saved_y is not None and not np.array_equal(saved_y, index_df["y_true"].to_numpy()):
++                raise RuntimeError(f"{name}: saved y_true disagrees with labels.parquet")
+             used_specs[name] = spec
+             log(f"    {name:30s} OK  ({spec['variant_group']}, family={spec['architecture_family']})")
+         else:
+@@ -358,37 +425,37 @@ def main():
+ 
+     # ---- Step 2: error matrix ----
+     err_matrix = pd.DataFrame({"sample_id": index_df["sample_id"], "fold": index_df["fold"],
+-                                "stage": index_df["stage"], "y_true": index_df["y_true"]})
+-    for name, p in probs.items():
+-        # each model's OWN threshold: 0.5 (argmax) for the B7/B9 GAT models,
+-        # the saved calibration-tuned value for the B3 baselines -- so every
+-        # error set matches how that model was originally evaluated
+-        pred = (p >= thresholds[name]).astype(int)
+-        err_matrix[name] = (pred != index_df["y_true"].to_numpy()).astype(bool)
++                                "stage": index_df["stage"], "resolution": index_df["resolution"],
++                                "y_true": index_df["y_true"]})
++    for name in probs:
++        # GAT models: 5-seed mean P(F2+) >= 0.5 (argmax), as originally defined.
++        # B3 baselines: the saved pred_test at their own calibration-tuned threshold.
++        err_matrix[name] = (decisions[name] != index_df["y_true"].to_numpy()).astype(bool)
+ 
+     model_names = list(probs.keys())
+     log(f"Step 2: error matrix = {len(err_matrix)} samples x {len(model_names)} models")
+     for name in model_names:
+         log(f"    {name:26s} error rate = {err_matrix[name].mean():.1%}")
+-    err_matrix.to_csv(OUT_DIR / "error_matrix.csv", index=False)
++    err_matrix.to_csv(out_dir / "error_matrix.csv", index=False)
+ 
+     # ---- Step 3: agreement vs chance ----
+-    log("Step 3: pairwise error agreement, observed vs chance...")
++    log("Step 3: pairwise error agreement, observed vs two references...")
+     pair_df, rates = agreement_analysis(err_matrix, model_names,
+                                          err_matrix["fold"].to_numpy(), args.n_permutations)
+-    pair_df.to_csv(OUT_DIR / "pairwise_agreement.csv", index=False)
++    pair_df.to_csv(out_dir / "pairwise_agreement.csv", index=False)
+     log(f"    mean observed Jaccard = {pair_df['jaccard_observed'].mean():.3f}  "
+-        f"vs chance {pair_df['jaccard_expected_chance'].mean():.3f}  "
+-        f"(excess {pair_df['jaccard_excess'].mean():+.3f}, mean MCC {pair_df['mcc'].mean():.3f})")
++        f"vs analytical independence {pair_df['jaccard_expected_chance'].mean():.3f}  "
++        f"vs within-fold permutation null {pair_df['jaccard_perm_null_mean'].mean():.3f}  "
++        f"(mean MCC {pair_df['mcc'].mean():.3f})")
+ 
+     fam_df = pd.concat([group_summary(pair_df, used_specs, "variant_group"),
+                         group_summary(pair_df, used_specs, "architecture_family")],
+                        ignore_index=True)
+-    fam_df.to_csv(OUT_DIR / "family_agreement_summary.csv", index=False)
+-    for _, r in fam_df[fam_df["level"] == "variant_group"].iterrows():
+-        log(f"    variant_group {r['relation']:8s}: observed {r['mean_jaccard_observed']:.3f} "
+-            f"vs chance {r['mean_jaccard_expected_chance']:.3f} "
+-            f"(excess {r['mean_jaccard_excess']:+.3f}, z={r['mean_perm_z']:.1f}, n={int(r['n_pairs'])} pairs)")
++    fam_df.to_csv(out_dir / "family_agreement_summary.csv", index=False)
++    for _, r in fam_df[fam_df["level"].isin(["variant_group", "architecture_family"])].iterrows():
++        log(f"    {r['level']} {r['relation']:8s} [{r['weighting']}]: observed {r['mean_jaccard_observed']:.3f} "
++            f"| analytical {r['mean_jaccard_expected_chance']:.3f} | permutation {r['mean_jaccard_perm_null_mean']:.3f} "
++            f"(z={r['mean_perm_z']:.1f}, n={int(r['n_pairs'])} pairs)")
+ 
+     # ---- Step 4: consensus failures ----
+     n_models = len(model_names)
+@@ -407,31 +474,39 @@ def main():
+             f"{int(mask.sum())} samples ({mask.mean():.1%})")
+ 
+     primary_mask = consensus_sets[args.consensus_level]
+-    err_matrix.loc[primary_mask, ["sample_id", "fold", "stage", "y_true", "n_models_wrong"]] \
+-        .to_csv(OUT_DIR / "consensus_failure_samples.csv", index=False)
+-
+-    # ---- Step 5: the discriminating adjacency test (Test A's function, unchanged) ----
+-    log("Step 5: adjacency test on the consensus-failure set (Test A's enrichment_test, unchanged)...")
+-    adj_lines = ["Adjacency test on consensus failures", "=" * 60, ""]
++    err_matrix.loc[primary_mask, ["sample_id", "fold", "stage", "resolution", "y_true", "n_models_wrong"]] \
++        .to_csv(out_dir / "consensus_failure_samples.csv", index=False)
++
++    # ---- Step 5: the discriminating adjacency test, exact-stage records only ----
++    exact = (err_matrix["resolution"] == "exact").to_numpy()
++    log(f"Step 5: adjacency test on the consensus-failure set -- exact-stage records only "
++        f"({int(exact.sum())} of {len(err_matrix)}; grouped labels have no exact stage)...")
++    adj_lines = ["Adjacency test on consensus failures", "=" * 60, "",
++                 f"Stage tests use the {int(exact.sum())} exact-stage records. The {int((~exact).sum())} "
++                 f"grouped-label records ({', '.join(GROUPED_RESOLUTIONS)}) keep their binary errors in",
++                 "the consensus counts but have no exact stage, so they are tabulated separately.", ""]
+     adj_results = {}
+     for lvl in sorted(consensus_sets):
+         mask = consensus_sets[lvl]
+-        if mask.sum() == 0:
+-            adj_lines.append(f">={lvl:.0%}: no consensus failures at this level -- test not defined.")
++        if mask[exact].sum() == 0:
++            adj_lines.append(f">={lvl:.0%}: no exact-stage consensus failures at this level -- test not defined.")
+             continue
+         table_5, (chi2, p_chi2), table_2, (odds_ratio, p_fisher) = enrichment_test(err_matrix, mask)
+-        adj_results[lvl] = {"n": int(mask.sum()), "odds_ratio": odds_ratio, "fisher_p": p_fisher,
+-                             "chi2": chi2, "chi2_p": p_chi2}
++        adj_results[lvl] = {"n": int(mask.sum()), "n_exact": int(mask[exact].sum()),
++                             "odds_ratio": odds_ratio, "fisher_p": p_fisher, "chi2": chi2, "chi2_p": p_chi2}
+         adj_lines += [
+-            f">= {lvl:.0%} of models wrong  (n={int(mask.sum())} consensus failures)",
+-            "  stage distribution (consensus failure vs rest):",
++            f">= {lvl:.0%} of models wrong  (n={int(mask.sum())} consensus failures, "
++            f"{int(mask[exact].sum())} with an exact stage)",
++            "  exact-stage distribution (consensus failure vs rest):",
+             "    " + table_5.to_string().replace("\n", "\n    "),
++            "  grouped-label records (not stage-tested):",
++            "    " + grouped_table(err_matrix, mask).to_string().replace("\n", "\n    "),
+             f"  2x5 chi-square: chi2={chi2:.3f}, p={p_chi2:.4g}",
+             f"  2x2 Fisher (adjacent {sorted(ADJACENT_STAGES)} vs distant, one-sided): "
+             f"OR={odds_ratio:.3f}, p={p_fisher:.4g}",
+             "",
+         ]
+-    with open(OUT_DIR / "adjacency_test.txt", "w") as f:
++    with open(out_dir / "adjacency_test.txt", "w") as f:
+         f.write("\n".join(adj_lines) + "\n")
+     for line in adj_lines:
+         log("    " + line)
+@@ -452,7 +527,8 @@ def main():
+         union = both + only_cons + only_flag
+         jac = both / union if union else float("nan")
+         ov_lines += [
+-            f"consensus-failure level: >={args.consensus_level:.0%} of models wrong",
++            f"consensus-failure level: >={args.consensus_level:.0%} of models wrong (all {len(merged)} records; "
++            f"binary errors, so grouped labels are valid here)",
+             f"  both consensus AND flagged      : {both}",
+             f"  consensus only (not flagged)    : {only_cons}",
+             f"  flagged only (not consensus)    : {only_flag}",
+@@ -468,7 +544,7 @@ def main():
+         ]
+     else:
+         ov_lines.append(f"{TEST_A_FLAGS} not found -- overlap not computed.")
+-    with open(OUT_DIR / "overlap_with_flags.txt", "w") as f:
++    with open(out_dir / "overlap_with_flags.txt", "w") as f:
+         f.write("\n".join(ov_lines) + "\n")
+     for line in ov_lines:
+         log("    " + line)
+@@ -487,39 +563,43 @@ def main():
+         "",
+         f"MODELS INCLUDED ({len(model_names)}): {', '.join(model_names)}",
+         f"architecture families present: {families_present}",
++        "decisions: GAT models = 5-seed mean P(F2+) >= 0.5; B3 baselines = saved pred_test",
+         "",
+     ]
+     if n_missing:
+-        lines.append(f"MODELS EXCLUDED ({n_missing}) -- no per-sample predictions found on disk. "
+-                      "Run the B3 persistence re-run to add them:")
++        lines.append(f"MODELS EXCLUDED ({n_missing}) -- no per-sample predictions found on disk:")
+         for fam, models in sorted(missing.items()):
+             lines.append(f"  {fam} ({len(models)}): {', '.join(models)}")
+     else:
+         lines.append("MODELS EXCLUDED: none -- every registered model had per-sample predictions.")
+     lines += [
+         "",
+-        "Sample-level tests below use n = %d held-out samples and are adequately powered."
++        "Sample-level tests below use n = %d held-out samples (binary errors); stage-level"
+         % len(err_matrix),
+-        "Any fold-level statement (n=8 cohorts) is descriptive and underpowered.",
++        "tests use the %d exact-stage records only. Any fold-level statement (n=8 cohorts)"
++        % int(exact.sum()),
++        "is descriptive and underpowered.",
+         "",
+-        "AGREEMENT (observed vs chance; raw agreement alone is not interpretable):",
+-        f"  mean Jaccard observed {pair_df['jaccard_observed'].mean():.3f} vs chance "
+-        f"{pair_df['jaccard_expected_chance'].mean():.3f} "
+-        f"(excess {pair_df['jaccard_excess'].mean():+.3f}); mean MCC {pair_df['mcc'].mean():.3f}",
+-        "  chance null = within-fold permutation (preserves each model's per-fold error rate,",
+-        "  so cohort difficulty differences are not counted as agreement).",
++        "AGREEMENT -- two DIFFERENT references, not interchangeable:",
++        "  analytical = E[Jaccard] for independent error sets at each model's pooled error rate;",
++        "  permutation = mean Jaccard under within-fold shuffling of each model's errors",
++        "  (preserves per-fold error rates, so cohort difficulty is not counted as agreement).",
++        f"  all pairs: observed {pair_df['jaccard_observed'].mean():.3f} | analytical "
++        f"{pair_df['jaccard_expected_chance'].mean():.3f} | permutation "
++        f"{pair_df['jaccard_perm_null_mean'].mean():.3f}; mean MCC {pair_df['mcc'].mean():.3f}",
+         "",
+     ]
+-    for _, r in fam_df[fam_df["level"] == "variant_group"].iterrows():
+-        lines.append(f"  variant_group {r['relation']}: observed {r['mean_jaccard_observed']:.3f}, "
+-                     f"excess {r['mean_jaccard_excess']:+.3f}, z={r['mean_perm_z']:.1f} "
++    for _, r in fam_df[fam_df["level"].isin(["variant_group", "architecture_family"])].iterrows():
++        lines.append(f"  {r['level']} {r['relation']} [{r['weighting']}]: observed "
++                     f"{r['mean_jaccard_observed']:.3f} | analytical {r['mean_jaccard_expected_chance']:.3f} | "
++                     f"permutation {r['mean_jaccard_perm_null_mean']:.3f}, z={r['mean_perm_z']:.1f} "
+                      f"({int(r['n_pairs'])} pairs)")
+     lines.append("")
+ 
+     if primary_adj:
+         lines += [
+             f"ADJACENCY TEST at >={args.consensus_level:.0%} consensus "
+-            f"(n={primary_adj['n']} consensus failures):",
++            f"(n={primary_adj['n']} consensus failures, {primary_adj['n_exact']} exact-stage):",
+             f"  Fisher one-sided OR={primary_adj['odds_ratio']:.3f}, p={primary_adj['fisher_p']:.4g}",
+             "",
+         ]
+@@ -528,40 +608,32 @@ def main():
+         lines += [
+             "CONVERGENT FAILURE: NOT ESTABLISHED -- insufficient architectural diversity.",
+             "",
+-            f"Every included model is the same architecture family ({families_present[0]}): the same",
+-            "GAT encoder over the same 26-feature node tensor, differing only in adversary mode,",
+-            "graph corruption, or feature subset. Agreement among them is the MAXIMAL shared-input",
+-            "case -- exactly the alternative explanation this analysis exists to rule out. The",
+-            "adjacency result above is reported as a DESCRIPTIVE finding and must not be presented",
+-            "as a kappa-free confirmation of the ceiling.",
+-            "",
+-            "TO MAKE THIS CLAIM TESTABLE: baselines_b3.py has been patched to persist per-sample",
+-            "predictions. Run the persistence re-run (see that script's --only flag) to populate",
+-            "baselines/per_sample_predictions/, then re-run this analysis. The tabular stage alone",
+-            "adds the linear and tree_ensemble families and makes between-family agreement -- the",
+-            "informative quantity -- computable.",
++            f"Every included model is the same architecture family ({families_present[0]}).",
++            "The adjacency result above is DESCRIPTIVE only.",
+         ]
+     elif primary_adj and primary_adj["fisher_p"] < 0.05 and primary_adj["odds_ratio"] > 1:
+         lines += [
+-            f"CONVERGENT FAILURE: SUPPORTED -- consensus failures enrich at F1/F2 "
+-            f"(OR={primary_adj['odds_ratio']:.2f}, p={primary_adj['fisher_p']:.3g}), consistent with",
+-            "label error independently of the kappa inversion.",
++            f"ADJACENCY: exact-stage consensus failures are enriched at F1/F2 "
++            f"(OR={primary_adj['odds_ratio']:.2f}, p={primary_adj['fisher_p']:.3g}). This is",
++            "consistent with, but does not demonstrate, label error: shared inputs and genuinely",
++            "boundary-ambiguous biology predict the same pattern, and the exact-stage subset",
++            "excludes GSE31803 entirely and keeps only exact F2 records of GSE213621.",
+         ]
+     else:
+         lines += [
+-            "CONVERGENT FAILURE: NOT SUPPORTED -- consensus failures do not concentrate at the",
+-            "decision boundary; convergent failure is more consistent with shared-input",
+-            "correlation or genuinely hard cases.",
++            "ADJACENCY: exact-stage consensus failures are NOT significantly enriched at F1/F2;",
++            "this analysis gives no label-error support beyond shared-input correlation or",
++            "genuinely hard cases.",
+         ]
+ 
+     lines += ["", "=" * 78]
+     summary = "\n".join(lines)
+-    with open(OUT_DIR / "summary.txt", "w") as f:
++    with open(out_dir / "summary.txt", "w") as f:
+         f.write(summary + "\n")
+     log("")
+     for line in lines:
+         log(line)
+-    log(f"outputs saved to {OUT_DIR}")
++    log(f"outputs saved to {out_dir}")
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/scripts/flagging_v2.py b/scripts/flagging_v2.py
+index 6f0b4d1..a582f60 100644
+--- a/scripts/flagging_v2.py
++++ b/scripts/flagging_v2.py
+@@ -61,6 +61,7 @@ from run_full_experiment_b7 import (
+     mc_dropout_probs, load_edge_index_generic, load_fold_info, build_model,
+ )
+ from ablations_b9 import load_split_for_ablation, build_edge_index_and_perm, ABLATIONS
++from stage_labels import exact_stage_mask
+ 
+ REPO = Path(__file__).resolve().parent.parent
+ FOLDS_DIR = REPO / "folds"
+@@ -445,6 +446,7 @@ def build_master(conditions, modes, folds, n_passes, recompute):
+         meta = labels.loc[test_ids]
+         y_true = meta["y_T1_significant"].to_numpy().astype(int)
+         stage = meta["stage"].to_numpy()
++        resolution = meta["resolution"].to_numpy()
+         cohort = fold_dir.name.split("_", 1)[1]
+ 
+         for condition in conditions:
+@@ -479,7 +481,7 @@ def build_master(conditions, modes, folds, n_passes, recompute):
+                     "test_cohort": cohort, "sample_id": test_ids,
+                     "p_f2plus": np.mean(p_seeds, axis=0),
+                     "uncertainty": np.mean(u_seeds, axis=0),
+-                    "y_true": y_true, "stage": stage,
++                    "y_true": y_true, "stage": stage, "resolution": resolution,
+                 }))
+ 
+     master = pd.concat(rows, ignore_index=True)
+@@ -615,13 +617,21 @@ def paired_log_or_ci(flags_a, flags_b, adjacent, folds, n_boot=N_BOOT, seed=BOOT
+ 
+ 
+ def describe_variant(name, df, flags, runs=None, condition=None, extra=None):
+-    """Every pre-registered metric for one variant, in one row."""
+-    adjacent = df["stage"].isin(ADJACENT_STAGES).to_numpy()
+-    two_stage = df["stage"].isin(TWO_STAGE_STAGES).to_numpy()
+-    folds = df["fold"].to_numpy()
++    """Every pre-registered metric for one variant, in one row.
++
++    2026-11 audit: stage metrics (odds ratio, CI, two-stage share, n_F0..n_F4)
++    use exact-stage records only -- grouped F0-F1 / F3-F4 records are stored as
++    F0 / F3 and have no exact stage. Flag counts, rate, stability and direction
++    use every record, because the binary label is valid for all of them."""
++    exact = exact_stage_mask(df)
++    adjacent = df["stage"].isin(ADJACENT_STAGES).to_numpy()[exact]
++    two_stage = df["stage"].isin(TWO_STAGE_STAGES).to_numpy()[exact]
++    folds = df["fold"].to_numpy()[exact]
+     n_flag = int(flags.sum())
+-    orr, p, (a, b, c, d) = fisher_or(flags, adjacent)
+-    lo, hi = bootstrap_ci(flags, adjacent, folds) if n_flag else (np.nan, np.nan)
++    flags_exact = flags[exact]
++    n_flag_exact = int(flags_exact.sum())
++    orr, p, (a, b, c, d) = fisher_or(flags_exact, adjacent)
++    lo, hi = bootstrap_ci(flags_exact, adjacent, folds) if n_flag_exact else (np.nan, np.nan)
+ 
+     stability = np.nan
+     if runs is not None and not runs.empty and condition is not None and n_flag:
+@@ -638,18 +648,18 @@ def describe_variant(name, df, flags, runs=None, condition=None, extra=None):
+     too_high = int((flags & (y == 1)).sum())
+ 
+     row = {
+-        "variant": name, "n_flagged": n_flag,
++        "variant": name, "n_flagged": n_flag, "n_flagged_exact_stage": n_flag_exact,
+         "flag_rate": n_flag / len(df) if len(df) else np.nan,
+         "or_f1f2": orr, "or_p_onesided": p,
+         "log_or_ci_lo": lo, "log_or_ci_hi": hi,
+         "n_flag_adjacent": a, "n_flag_distant": b,
+-        "two_stage_share": float(two_stage[flags].mean()) if n_flag else np.nan,
++        "two_stage_share": float(two_stage[flags_exact].mean()) if n_flag_exact else np.nan,
+         "stability_share": stability,
+         "dir_recorded_too_low": too_low, "dir_recorded_too_high": too_high,
+         "dir_split_low_share": too_low / n_flag if n_flag else np.nan,
+     }
+     for s in ALL_STAGES:
+-        row[f"n_{s}"] = int(((df["stage"] == s).to_numpy() & flags).sum())
++        row[f"n_{s}"] = int(((df["stage"] == s).to_numpy() & flags & exact).sum())
+     if extra:
+         row.update(extra)
+     return row
+@@ -657,14 +667,16 @@ def describe_variant(name, df, flags, runs=None, condition=None, extra=None):
+ 
+ def per_cohort_table(name, df, flags):
+     adjacent = df["stage"].isin(ADJACENT_STAGES).to_numpy()
++    exact = exact_stage_mask(df)
+     rows = []
+     for (fold, cohort), g in df.groupby(["fold", "test_cohort"]):
+         m = (df["fold"] == fold).to_numpy()
+-        f, adj = flags[m], adjacent[m]
++        f, adj = flags[m & exact], adjacent[m & exact]
+         orr, p, (a, b, c, d) = fisher_or(f, adj)
+         rows.append({"variant": name, "fold": fold, "test_cohort": cohort,
+                       "n_patients": int(m.sum()), "n_flagged": int(f.sum()),
+-                      "flag_rate": float(f.mean()), "or_f1f2": orr, "or_p_onesided": p,
++                      "n_exact_stage": int((m & exact).sum()),
++                      "flag_rate": float(flags[m].mean()), "or_f1f2": orr, "or_p_onesided": p,
+                       "n_flag_adjacent": a, "n_flag_distant": b})
+     return pd.DataFrame(rows)
+ 
+@@ -684,11 +696,12 @@ def plot_stage_distributions(df_primary, variant_flags, path_png, path_pdf):
+     ncol = 3
+     nrow = int(np.ceil(len(items) / ncol))
+     fig, axes = plt.subplots(nrow, ncol, figsize=(4.4 * ncol, 3.3 * nrow), squeeze=False)
+-    bg = df_primary["stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
++    exact = exact_stage_mask(df_primary)
++    bg = df_primary.loc[exact, "stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
+     x = np.arange(len(ALL_STAGES))
+ 
+     for ax, (name, flags) in zip(axes.ravel(), items):
+-        sub = df_primary.loc[flags, "stage"]
++        sub = df_primary.loc[flags & exact, "stage"]
+         share = sub.value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
+         ax.bar(x - 0.2, bg * 100, 0.38, color=NEUTRAL, label="all held-out patients")
+         ax.bar(x + 0.2, share * 100, 0.38, color=CODAGAT, label="flagged")
+@@ -881,8 +894,9 @@ def main():
+     say("  ranking: disagreement > 0.5, then lowest MC-dropout uncertainty first")
+     say("")
+ 
+-    adjacent = prim["stage"].isin(ADJACENT_STAGES).to_numpy()
+-    folds_arr = prim["fold"].to_numpy()
++    exact_prim = exact_stage_mask(prim)
++    adjacent = prim["stage"].isin(ADJACENT_STAGES).to_numpy()[exact_prim]
++    folds_arr = prim["fold"].to_numpy()[exact_prim]
+     graph_rows, matched_flags = [], {}
+ 
+     for n_target in targets:
+@@ -928,7 +942,8 @@ def main():
+             fa = matched_flags.get((cond, n_target))
+             if fa is None:
+                 continue
+-            mean, lo, hi = paired_log_or_ci(fa, fe, adjacent, folds_arr, args.n_boot)
++            # exact-stage records only; matched counts were set over all records
++            mean, lo, hi = paired_log_or_ci(fa[exact_prim], fe[exact_prim], adjacent, folds_arr, args.n_boot)
+             if not np.isfinite(lo):
+                 continue
+             verdict = ("BETTER than no graph" if lo > 0 else
+diff --git a/scripts/flagging_v3.py b/scripts/flagging_v3.py
+index 526ee7a..40087f3 100644
+--- a/scripts/flagging_v3.py
++++ b/scripts/flagging_v3.py
+@@ -512,7 +512,7 @@ def build_condition_frame(condition, folds):
+             "condition": condition, "fold": fid,
+             "test_cohort": fold_dir.name.split("_", 1)[1],
+             "sample_id": test_ids, "y_true": y_test,
+-            "stage": meta["stage"].to_numpy(),
++            "stage": meta["stage"].to_numpy(), "resolution": meta["resolution"].to_numpy(),
+             "p_class0": p_test[:, 0], "p_class1": p_test[:, 1],
+             "p_f2plus": p_test[:, 1],
+             "t0": t[0], "t1": t[1],
+@@ -588,8 +588,9 @@ def plot_stage_distributions(frames, path_png, path_pdf):
+     fig, axes = plt.subplots(nrow, ncol, figsize=(4.5 * ncol, 3.4 * nrow), squeeze=False)
+     x = np.arange(len(ALL_STAGES))
+     for ax, (name, d, f) in zip(axes.ravel(), items):
+-        bg = d["stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
+-        fg = d.loc[f, "stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
++        ex = (d["resolution"] == "exact").to_numpy()   # grouped labels have no exact stage
++        bg = d.loc[ex, "stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
++        fg = d.loc[f & ex, "stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
+         ax.bar(x - 0.2, bg * 100, 0.38, color=NEUTRAL, label="all held-out patients")
+         ax.bar(x + 0.2, fg * 100, 0.38, color=CODAGAT, label="CL-flagged")
+         ax.axvspan(0.5, 2.5, color=OKABE[2], alpha=0.10, zorder=0)
+diff --git a/scripts/flagging_v4.py b/scripts/flagging_v4.py
+index de7d613..597b389 100644
+--- a/scripts/flagging_v4.py
++++ b/scripts/flagging_v4.py
+@@ -356,6 +356,7 @@ def build_pool(condition, folds):
+         meta_rows.append(pd.DataFrame({
+             "fold": fid, "test_cohort": fold_dir.name.split("_", 1)[1],
+             "sample_id": test_ids, "y_true": y_test, "stage": meta["stage"].to_numpy(),
++            "resolution": meta["resolution"].to_numpy(),
+         }))
+     meta = pd.concat(meta_rows, ignore_index=True) if meta_rows else pd.DataFrame()
+     return per_fold, meta, missing
+diff --git a/scripts/h2_decision_b4.py b/scripts/h2_decision_b4.py
+index dad3ca5..f3b382d 100644
+--- a/scripts/h2_decision_b4.py
++++ b/scripts/h2_decision_b4.py
+@@ -20,6 +20,15 @@ relative to a missing H2 layer), confounding the comparison with an
+ unintended difference in H3/H4 initialization. Zero-weighting L_H2 gives
+ mathematically identical gradients to "H2 absent" for every other part of
+ the network, without that confound.
++
++DECODER CORRECTION (2026-11 audit): the h2_ordinal_accuracy / h2_ordinal_mae
++columns of the historical h2_decision/per_fold.csv (folds 0-4 only) were
++computed with the pre-fix corn_predict_stage, which thresholded the CORN
++conditional probabilities directly instead of their cumulative product. The
++logits and checkpoints behind that file were never saved, so those two
++columns cannot be corrected and must not be reported. This script now
++inherits the fixed decoder; it still TRAINS models, so it is not part of the
++analysis-only reproduction, and it refuses to overwrite the historical file.
+ """
+ 
+ import os
+@@ -230,9 +239,15 @@ def main():
+     parser = argparse.ArgumentParser(description="CoDA-GAT Block B4 -- H2 keep-or-kill decision")
+     parser.add_argument("--folds", nargs="*", default=None, help="fold dir names (default: all 8)")
+     parser.add_argument("--seed", type=int, default=SEED)
++    parser.add_argument("--out-dir", type=Path, default=OUT_DIR,
++                        help="where to write results; the historical h2_decision/ is never overwritten")
+     args = parser.parse_args()
+ 
+-    OUT_DIR.mkdir(parents=True, exist_ok=True)
++    out_dir = args.out_dir
++    if (out_dir / "per_fold.csv").exists():
++        raise SystemExit(f"{out_dir / 'per_fold.csv'} already exists (historical record, pre-fix CORN "
++                         f"decoder). Refusing to overwrite it; pass --out-dir <new directory>.")
++    out_dir.mkdir(parents=True, exist_ok=True)
+ 
+     fold_dirs = sorted(p for p in FOLDS_DIR.iterdir() if p.is_dir()) if args.folds is None \
+         else [FOLDS_DIR / f for f in args.folds]
+@@ -277,7 +292,7 @@ def main():
+                 "h2_ordinal_n_exact_label_test": result_on["ordinal"]["n_exact_label_test"],
+             })
+         per_fold_rows.append(row)
+-        pd.DataFrame(per_fold_rows).to_csv(OUT_DIR / "per_fold.csv", index=False)
++        pd.DataFrame(per_fold_rows).to_csv(out_dir / "per_fold.csv", index=False)
+ 
+     df = pd.DataFrame(per_fold_rows)
+     log("building decision summary...")
+@@ -297,7 +312,7 @@ def main():
+             "wilcoxon_p": p_value,
+         })
+     summary_df = pd.DataFrame(summary_rows)
+-    summary_df.to_csv(OUT_DIR / "summary.csv", index=False)
++    summary_df.to_csv(out_dir / "summary.csv", index=False)
+ 
+     primary = summary_df[summary_df["metric"] == "macro_f1"].iloc[0]
+     diff_mean, diff_std, p_value = primary["diff_mean"], primary["diff_std"], primary["wilcoxon_p"]
+@@ -319,12 +334,12 @@ def main():
+         f"treat as a decision aid, not a statistical proof.")
+     log("=" * 70)
+ 
+-    with open(OUT_DIR / "readout.txt", "w") as f:
++    with open(out_dir / "readout.txt", "w") as f:
+         f.write(f"Keeping H2 {readout} the primary task on average "
+                 f"(mean macro-F1 diff = {diff_mean:+.4f} +/- {diff_std:.4f} across {len(df)} folds, "
+                 f"Wilcoxon p={p_value:.4f}).\n")
+ 
+-    log(f"saved: {OUT_DIR / 'per_fold.csv'}, {OUT_DIR / 'summary.csv'}, {OUT_DIR / 'readout.txt'}")
++    log(f"saved: {out_dir / 'per_fold.csv'}, {out_dir / 'summary.csv'}, {out_dir / 'readout.txt'}")
+     log("Block B4 complete.")
+ 
+ 
+diff --git a/scripts/test_a_adjacency.py b/scripts/test_a_adjacency.py
+index b5813a4..3fae48e 100644
+--- a/scripts/test_a_adjacency.py
++++ b/scripts/test_a_adjacency.py
+@@ -21,6 +21,12 @@ CRITICAL: the flag (disagreement AND low uncertainty) is computed from:
+ The test cohort's fine-grained ordinal STAGE label (F0-F4) -- the thing
+ this test checks for enrichment -- is never used to construct the flag,
+ only to evaluate it afterward.
++
++STAGE RESOLUTION (2026-11 audit): grouped F0-F1 records are stored as "F0"
++and grouped F3-F4 records as "F3". The enrichment test now uses exact-stage
++records only (stage_labels.enrichment_test); grouped records keep their valid
++binary label for flagging and are tabulated separately. The historical
++summary in test_a_adjacency/ counted them under their stored stage code.
+ """
+ 
+ import os
+@@ -35,13 +41,13 @@ import numpy as np
+ import pandas as pd
+ import torch
+ 
+-from scipy.stats import chi2_contingency, fisher_exact
+ from torch_geometric.loader import DataLoader
+ 
+ from train_fold0_b1 import CoDAGAT, get_device, N_FEATURES, SHARED_DIR, BATCH_SIZE
+ from run_full_experiment_b7 import (
+     mc_dropout_probs, load_edge_index_generic, load_fold_info, load_split_for_fold,
+ )
++from stage_labels import enrichment_test, grouped_table, ADJACENT_STAGES, ALL_STAGES  # noqa: F401
+ 
+ REPO_ROOT = Path(__file__).resolve().parent.parent
+ FOLDS_DIR = REPO_ROOT / "folds"
+@@ -53,8 +59,6 @@ SEEDS = [42, 43, 44, 45, 46]
+ THRESHOLD_PERCENTILES = [10, 15, 20, 25, 30, 40]
+ PRIMARY_PERCENTILE = 20
+ DISAGREEMENT_THRESHOLD = 0.5  # |p - y| > 0.5 <=> the model's argmax prediction flips the label
+-ADJACENT_STAGES = {"F1", "F2"}
+-ALL_STAGES = ["F0", "F1", "F2", "F3", "F4"]
+ SENSIBLE_RATE_LO, SENSIBLE_RATE_HI = 0.15, 0.25
+ 
+ 
+@@ -108,12 +112,13 @@ def process_fold(fold_dir, edge_index, dev_lookup, labels_df, n_mc_passes):
+     fold_labels = labels_df.loc[test_sample_ids]
+     y_test = fold_labels["y_T1_significant"].to_numpy().astype(int)
+     stage_test = fold_labels["stage"].to_numpy()
++    resolution_test = fold_labels["resolution"].to_numpy()
+     disagreement = np.abs(p_test - y_test)
+ 
+     df = pd.DataFrame({
+         "fold": fold_id, "test_cohort": test_cohort, "sample_id": test_sample_ids,
+         "p_f2plus": p_test, "uncertainty": u_test, "y_true": y_test, "stage": stage_test,
+-        "disagreement": disagreement,
++        "resolution": resolution_test, "disagreement": disagreement,
+     })
+     return df, cal_uncertainty_pool
+ 
+@@ -146,32 +151,6 @@ def threshold_sensitivity(df, cal_uncertainty_by_fold):
+     return pd.DataFrame(rows)
+ 
+ 
+-def enrichment_test(df, flagged):
+-    df = df.copy()
+-    df["flagged"] = flagged
+-    df["adjacency_class"] = np.where(df["stage"].isin(ADJACENT_STAGES), "adjacent", "distant")
+-
+-    # descriptive: full 2x5 (flagged/unflagged x F0..F4)
+-    counts_5 = {stage: [int(((df["stage"] == stage) & df["flagged"]).sum()),
+-                         int(((df["stage"] == stage) & ~df["flagged"]).sum())]
+-                for stage in ALL_STAGES}
+-    table_5 = pd.DataFrame(counts_5, index=["flagged", "unflagged"])
+-    try:
+-        chi2, p_chi2, _, _ = chi2_contingency(table_5.to_numpy())
+-    except ValueError:
+-        chi2, p_chi2 = float("nan"), float("nan")
+-
+-    # primary: 2x2 Fisher's exact (adjacent F1/F2 vs distant F0/F3/F4), one-sided
+-    n_flag_adj = int(((df["adjacency_class"] == "adjacent") & df["flagged"]).sum())
+-    n_flag_dist = int(((df["adjacency_class"] == "distant") & df["flagged"]).sum())
+-    n_unflag_adj = int(((df["adjacency_class"] == "adjacent") & ~df["flagged"]).sum())
+-    n_unflag_dist = int(((df["adjacency_class"] == "distant") & ~df["flagged"]).sum())
+-    table_2 = np.array([[n_flag_adj, n_flag_dist], [n_unflag_adj, n_unflag_dist]])
+-    odds_ratio, p_fisher = fisher_exact(table_2, alternative="greater")
+-
+-    return table_5, (chi2, p_chi2), table_2, (float(odds_ratio), float(p_fisher))
+-
+-
+ # ==========================================================================
+ # Main
+ # ==========================================================================
+@@ -180,9 +159,16 @@ def main():
+     parser.add_argument("--folds", nargs="*", default=None)
+     parser.add_argument("--primary-percentile", type=int, default=PRIMARY_PERCENTILE, choices=THRESHOLD_PERCENTILES)
+     parser.add_argument("--n-mc-passes", type=int, default=30)
++    parser.add_argument("--out-dir", type=Path, default=OUT_DIR,
++                        help="where to write results; the historical test_a_adjacency/ is never overwritten")
+     args = parser.parse_args()
+ 
+-    OUT_DIR.mkdir(parents=True, exist_ok=True)
++    out_dir = args.out_dir
++    if (out_dir / "per_sample_flags.csv").exists():
++        raise SystemExit(f"{out_dir / 'per_sample_flags.csv'} already exists (historical record). "
++                         f"Refusing to overwrite it; pass --out-dir <new directory>. To re-test saved "
++                         f"flags without MC-dropout inference use corrections_2026-11/run_analysis_only.sh.")
++    out_dir.mkdir(parents=True, exist_ok=True)
+ 
+     log("Test A: the adjacency check")
+     log("Hypothesis: confident model/label disagreement clusters at F1/F2 (real pathologist")
+@@ -207,12 +193,12 @@ def main():
+             f"calibration uncertainty pool size={len(cal_pool)}")
+ 
+     df = pd.concat(all_rows, ignore_index=True)
+-    df.to_csv(OUT_DIR / "per_sample_values.csv", index=False)
++    df.to_csv(out_dir / "per_sample_values.csv", index=False)
+     log(f"per-sample values saved ({len(df)} test samples across {len(fold_dirs)} folds)")
+ 
+     log("Step 4: threshold sensitivity...")
+     sens_df = threshold_sensitivity(df, cal_uncertainty_by_fold)
+-    sens_df.to_csv(OUT_DIR / "threshold_sensitivity.csv", index=False)
++    sens_df.to_csv(out_dir / "threshold_sensitivity.csv", index=False)
+     for _, row in sens_df.iterrows():
+         log(f"    uncertainty <= calibration p{int(row['uncertainty_percentile'])}: "
+             f"pooled flagging rate = {row['pooled_flagging_rate']:.1%}")
+@@ -220,15 +206,18 @@ def main():
+     log(f"primary threshold: calibration uncertainty percentile {args.primary_percentile}")
+     flagged, thresholds = compute_flags(df, cal_uncertainty_by_fold, args.primary_percentile)
+     df["flagged"] = flagged
+-    df.to_csv(OUT_DIR / "per_sample_flags.csv", index=False)
++    df.to_csv(out_dir / "per_sample_flags.csv", index=False)
+     n_flagged = int(flagged.sum())
+     rate = n_flagged / len(df)
+     log(f"    {n_flagged}/{len(df)} samples flagged ({rate:.1%})")
+ 
+     table_5, (chi2, p_chi2), table_2, (odds_ratio, p_fisher) = enrichment_test(df, flagged)
+-    table_5.to_csv(OUT_DIR / "stage_distribution_5class.csv")
++    n_exact = int((df["resolution"] == "exact").sum())
++    g_table = grouped_table(df, flagged)
++    table_5.to_csv(out_dir / "stage_distribution_5class.csv")
++    g_table.to_csv(out_dir / "grouped_label_flags.csv")
+     pd.DataFrame(table_2, index=["flagged", "unflagged"], columns=["adjacent_F1F2", "distant_F0F3F4"]).to_csv(
+-        OUT_DIR / "adjacency_2x2_table.csv")
++        out_dir / "adjacency_2x2_table.csv")
+ 
+     log("")
+     log("STAGE DISTRIBUTION (flagged vs unflagged):")
+@@ -262,7 +251,10 @@ def main():
+         f"MC-dropout uncertainty <= the {args.primary_percentile}th percentile of that fold's "
+         f"CALIBRATION cohort's own MC-dropout distribution (never the test cohort's).", "",
+         f"Flagged {n_flagged}/{len(df)} test samples ({rate:.1%}). {rate_note}", "",
+-        "Stage distribution (flagged vs unflagged):", table_5.to_string(), "",
++        f"Stage tests use the {n_exact} exact-stage records only; the {len(df) - n_exact} grouped-label",
++        "records (stored as F0 for F0-F1, F3 for F3-F4) are excluded from them and tabulated here:",
++        g_table.to_string(), "",
++        "Stage distribution, exact-stage records (flagged vs unflagged):", table_5.to_string(), "",
+         f"2x5 chi-square (all 5 stages): chi2={chi2:.3f}, p={p_chi2:.4f}",
+         f"2x2 Fisher's exact (adjacent F1/F2 vs distant F0/F3/F4, one-sided, "
+         f"H1: flagged more likely adjacent): odds_ratio={odds_ratio:.3f}, p={p_fisher:.4f}", "",
+@@ -270,12 +262,12 @@ def main():
+         "=" * 78,
+     ]
+     summary = "\n".join(summary_lines)
+-    with open(OUT_DIR / "summary.txt", "w") as f:
++    with open(out_dir / "summary.txt", "w") as f:
+         f.write(summary + "\n")
+     for line in summary_lines:
+         log(line)
+ 
+-    log(f"outputs saved to {OUT_DIR}")
++    log(f"outputs saved to {out_dir}")
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/scripts/test_b_rate.py b/scripts/test_b_rate.py
+index 849919f..ba367ca 100644
+--- a/scripts/test_b_rate.py
++++ b/scripts/test_b_rate.py
+@@ -14,6 +14,12 @@ computation is the calibration-cohort MC-dropout pools needed to derive
+ uncertainty thresholds beyond p40 (see module docstring context / the
+ Step 1 note in the accompanying report -- Test A computed these in
+ memory but never wrote them to disk).
++
++STAGE RESOLUTION (2026-11 audit): enrichment_test now scores exact-stage
++records only (see stage_labels.py), so the resolution column is attached to
++Test A's saved values below. The historical test_b_rate/ outputs counted
++grouped F0-F1 / F3-F4 records under their stored stage code and could not be
++recomputed without re-running calibration MC-dropout, which was never saved.
+ """
+ 
+ import os
+@@ -96,7 +102,8 @@ def extended_sweep(df, cal_pools, percentiles, predicted_rate):
+         n_flag = int(flagged.sum())
+         rate = n_flag / len(df)
+         rate_by_fold = df.assign(flagged=flagged).groupby("fold")["flagged"].mean()
+-        prop_f2 = float(df.loc[flagged, "stage"].eq("F2").mean()) if n_flag > 0 else float("nan")
++        flagged_exact = flagged & (df["resolution"] == "exact").to_numpy()
++        prop_f2 = float(df.loc[flagged_exact, "stage"].eq("F2").mean()) if flagged_exact.any() else float("nan")
+ 
+         row = {
+             "uncertainty_percentile": q, "n_flagged": n_flag, "pooled_flagging_rate": rate,
+@@ -202,9 +209,15 @@ def main():
+     parser.add_argument("--predicted-rate", type=float, default=PREDICTED_MISASSIGNMENT_RATE)
+     parser.add_argument("--tolerance", type=float, default=0.05,
+                          help="absolute rate tolerance (e.g. 0.05 = 5pp) used to judge 'near' the predicted rate")
++    parser.add_argument("--out-dir", type=Path, default=OUT_DIR,
++                        help="where to write results; the historical test_b_rate/ is never overwritten")
+     args = parser.parse_args()
+ 
+-    OUT_DIR.mkdir(parents=True, exist_ok=True)
++    out_dir = args.out_dir
++    if (out_dir / "threshold_sweep_extended.csv").exists():
++        raise SystemExit(f"{out_dir / 'threshold_sweep_extended.csv'} already exists (historical record). "
++                         f"Refusing to overwrite it; pass --out-dir <new directory>.")
++    out_dir.mkdir(parents=True, exist_ok=True)
+ 
+     log("Test B: the rate-consistency check")
+     log(f"Predicted latent misassignment rate: {args.predicted_rate:.1%}")
+@@ -212,6 +225,9 @@ def main():
+ 
+     log("loading Test A's saved per-sample values (test-side; already computed, not recomputed)...")
+     df = pd.read_csv(TEST_A_DIR / "per_sample_values.csv")
++    if "resolution" not in df.columns:
++        labels_df = pd.read_parquet(SHARED_DIR / "labels.parquet")
++        df["resolution"] = labels_df.loc[df["sample_id"], "resolution"].to_numpy()
+     log(f"    {len(df)} test samples across {df['fold'].nunique()} folds")
+ 
+     log("recomputing calibration-cohort MC-dropout uncertainty pools -- the one piece Test A "
+@@ -223,7 +239,7 @@ def main():
+ 
+     log("Steps 2+3: extended threshold sweep with adjacency enrichment at every threshold...")
+     sweep_df = extended_sweep(df, cal_pools, EXTENDED_PERCENTILES, args.predicted_rate)
+-    sweep_df.to_csv(OUT_DIR / "threshold_sweep_extended.csv", index=False)
++    sweep_df.to_csv(out_dir / "threshold_sweep_extended.csv", index=False)
+     for _, row in sweep_df.iterrows():
+         log(f"    p{int(row['uncertainty_percentile']):>2}: rate={row['pooled_flagging_rate']:6.1%}  "
+             f"OR={row['odds_ratio']:6.3f}  fisher_p={row['fisher_p']:.4f}  "
+@@ -237,14 +253,14 @@ def main():
+     log("Step 4: building operating curve...")
+     operating_curve_df = sweep_df[["uncertainty_percentile", "pooled_flagging_rate",
+                                     "odds_ratio", "fisher_p", "n_flagged"]].copy()
+-    operating_curve_df.to_csv(OUT_DIR / "operating_curve.csv", index=False)
++    operating_curve_df.to_csv(out_dir / "operating_curve.csv", index=False)
+     make_operating_curve_plot(sweep_df, args.predicted_rate, args.reference_percentile,
+-                               OUT_DIR / "operating_curve.png")
+-    log(f"    saved {OUT_DIR / 'operating_curve.png'}")
++                               out_dir / "operating_curve.png")
++    log(f"    saved {out_dir / 'operating_curve.png'}")
+ 
+     log(f"Step 5: disagreement-threshold sensitivity (uncertainty held at p{args.reference_percentile})...")
+     disagree_df = disagreement_sensitivity(df, cal_pools, args.reference_percentile, DISAGREEMENT_SWEEP)
+-    disagree_df.to_csv(OUT_DIR / "disagreement_sensitivity.csv", index=False)
++    disagree_df.to_csv(out_dir / "disagreement_sensitivity.csv", index=False)
+     for _, row in disagree_df.iterrows():
+         tag = "non-arbitrary default" if row["is_nonarbitrary_default"] else "sensitivity check only"
+         log(f"    disagreement>{row['disagreement_threshold']}: rate={row['pooled_flagging_rate']:.1%}  "
+@@ -301,12 +317,12 @@ def main():
+         "=" * 78,
+     ]
+     summary = "\n".join(summary_lines)
+-    with open(OUT_DIR / "summary.txt", "w") as f:
++    with open(out_dir / "summary.txt", "w") as f:
+         f.write(summary + "\n")
+     for line in summary_lines:
+         log(line)
+ 
+-    log(f"outputs saved to {OUT_DIR}")
++    log(f"outputs saved to {out_dir}")
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/scripts/train_fold0_b1.py b/scripts/train_fold0_b1.py
+index f0c2729..8c5d1e9 100644
+--- a/scripts/train_fold0_b1.py
++++ b/scripts/train_fold0_b1.py
+@@ -185,8 +185,20 @@ def corn_loss(logits, targets, num_classes):
+ 
+ 
+ def corn_predict_stage(logits):
+-    """Convert CORN logits (N, K-1) to predicted ordinal rank (N,)."""
++    """Convert CORN logits (N, K-1) to predicted ordinal rank (N,).
++
++    Logit k is trained by corn_loss above on the CONDITIONAL task
++    P(y > k | y > k-1) (only samples that survived threshold k-1 enter task k).
++    The unconditional P(y > k) is therefore the cumulative product of the
++    conditional probabilities over tasks 0..k, and the rank is the number of
++    those cumulative probabilities above 0.5 -- as in the official
++    coral_pytorch.dataset.corn_label_from_logits (Shi, Cao & Raschka, 2022).
++    Thresholding the conditional probabilities directly (the pre-2026-11
++    version of this function) over-counts ranks: e.g. conditional
++    [0.3, 0.9, 0.9, 0.9] gave rank 3, whereas P(y > 0) = 0.3 means rank 0.
++    """
+     probs = torch.sigmoid(logits)
++    probs = torch.cumprod(probs, dim=1)
+     return (probs > 0.5).sum(dim=1)
+ 
+ 
+diff --git a/scripts/stage_labels.py b/scripts/stage_labels.py
+new file mode 100644
+index 0000000..b2f1a22
+--- /dev/null
++++ b/scripts/stage_labels.py
+@@ -0,0 +1,83 @@
++"""
++CoDA-GAT — stage-label helpers shared by the adjacency / consensus analyses.
++
++Torch-free on purpose: the analyses that only read saved predictions import
++this module instead of test_a_adjacency.py, which pulls in the model and
++training code.
++
++WHY THIS EXISTS (2026-11 audit). labels.parquet stores grouped histology
++under a single stage code:
++  resolution == "grouped_F0_F1"  (137 records) -> stage "F0"
++  resolution == "grouped_F3_F4"  (127 records) -> stage "F3"
++Their binary F2+ label is valid, but their exact stage is not known, so they
++cannot enter any test that asks WHICH stage a record has. In particular a
++grouped F0-F1 record may be an F1 (adjacent to the F1/F2 boundary) and was
++being counted as a distant F0. Stage-level enrichment is therefore computed
++on the exact-stage subset only; grouped records are reported separately and
++kept in every binary-label analysis.
++"""
++
++import numpy as np
++import pandas as pd
++
++from scipy.stats import chi2_contingency, fisher_exact
++
++ADJACENT_STAGES = {"F1", "F2"}
++ALL_STAGES = ["F0", "F1", "F2", "F3", "F4"]
++EXACT = "exact"
++GROUPED_RESOLUTIONS = ["grouped_F0_F1", "grouped_F3_F4"]
++
++
++def exact_stage_mask(df):
++    """True where the recorded stage is an exact F0-F4 stage. Refuses to guess
++    when the resolution column is missing: a stage column alone cannot tell an
++    exact F0 from a grouped F0-F1."""
++    if "resolution" not in df.columns:
++        raise KeyError("stage-level analysis needs a 'resolution' column "
++                       "(from shared/labels.parquet); refusing to treat grouped stages as exact")
++    return (df["resolution"] == EXACT).to_numpy()
++
++
++def enrichment_test(df, flagged, exact_only=True):
++    """2x5 chi-square and one-sided 2x2 Fisher (flagged at F1/F2 vs F0/F3/F4).
++
++    exact_only=True (the default) restricts both tests to exact-stage records.
++    exact_only=False reproduces the historical behaviour, in which grouped
++    records are counted under their stored stage code; use it only to show
++    what was previously reported.
++    """
++    df = df.copy()
++    df["flagged"] = np.asarray(flagged, dtype=bool)
++    if exact_only:
++        df = df[exact_stage_mask(df)]
++    df["adjacency_class"] = np.where(df["stage"].isin(ADJACENT_STAGES), "adjacent", "distant")
++
++    # descriptive: full 2x5 (flagged/unflagged x F0..F4)
++    counts_5 = {stage: [int(((df["stage"] == stage) & df["flagged"]).sum()),
++                         int(((df["stage"] == stage) & ~df["flagged"]).sum())]
++                for stage in ALL_STAGES}
++    table_5 = pd.DataFrame(counts_5, index=["flagged", "unflagged"])
++    try:
++        chi2, p_chi2, _, _ = chi2_contingency(table_5.loc[:, table_5.sum(axis=0) > 0].to_numpy())
++    except ValueError:
++        chi2, p_chi2 = float("nan"), float("nan")
++
++    # primary: 2x2 Fisher's exact (adjacent F1/F2 vs distant F0/F3/F4), one-sided
++    n_flag_adj = int(((df["adjacency_class"] == "adjacent") & df["flagged"]).sum())
++    n_flag_dist = int(((df["adjacency_class"] == "distant") & df["flagged"]).sum())
++    n_unflag_adj = int(((df["adjacency_class"] == "adjacent") & ~df["flagged"]).sum())
++    n_unflag_dist = int(((df["adjacency_class"] == "distant") & ~df["flagged"]).sum())
++    table_2 = np.array([[n_flag_adj, n_flag_dist], [n_unflag_adj, n_unflag_dist]])
++    odds_ratio, p_fisher = fisher_exact(table_2, alternative="greater")
++
++    return table_5, (chi2, p_chi2), table_2, (float(odds_ratio), float(p_fisher))
++
++
++def grouped_table(df, flagged):
++    """Flagged/unflagged counts for the grouped-label records, which the
++    exact-stage tests leave out. Columns are resolutions, not stages."""
++    flagged = np.asarray(flagged, dtype=bool)
++    counts = {res: [int(((df["resolution"] == res).to_numpy() & flagged).sum()),
++                    int(((df["resolution"] == res).to_numpy() & ~flagged).sum())]
++              for res in GROUPED_RESOLUTIONS}
++    return pd.DataFrame(counts, index=["flagged", "unflagged"])

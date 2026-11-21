@@ -512,7 +512,7 @@ def build_condition_frame(condition, folds):
             "condition": condition, "fold": fid,
             "test_cohort": fold_dir.name.split("_", 1)[1],
             "sample_id": test_ids, "y_true": y_test,
-            "stage": meta["stage"].to_numpy(),
+            "stage": meta["stage"].to_numpy(), "resolution": meta["resolution"].to_numpy(),
             "p_class0": p_test[:, 0], "p_class1": p_test[:, 1],
             "p_f2plus": p_test[:, 1],
             "t0": t[0], "t1": t[1],
@@ -588,8 +588,9 @@ def plot_stage_distributions(frames, path_png, path_pdf):
     fig, axes = plt.subplots(nrow, ncol, figsize=(4.5 * ncol, 3.4 * nrow), squeeze=False)
     x = np.arange(len(ALL_STAGES))
     for ax, (name, d, f) in zip(axes.ravel(), items):
-        bg = d["stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
-        fg = d.loc[f, "stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
+        ex = (d["resolution"] == "exact").to_numpy()   # grouped labels have no exact stage
+        bg = d.loc[ex, "stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
+        fg = d.loc[f & ex, "stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
         ax.bar(x - 0.2, bg * 100, 0.38, color=NEUTRAL, label="all held-out patients")
         ax.bar(x + 0.2, fg * 100, 0.38, color=CODAGAT, label="CL-flagged")
         ax.axvspan(0.5, 2.5, color=OKABE[2], alpha=0.10, zorder=0)

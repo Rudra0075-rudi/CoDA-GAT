@@ -1,0 +1,11 @@
+Overlap: consensus failures vs Test A detector flags
+============================================================
+
+consensus-failure level: >=80% of models wrong (all 1064 records; binary errors, so grouped labels are valid here)
+  both consensus AND flagged      : 41
+  consensus only (not flagged)    : 98
+  flagged only (not consensus)    : 11
+  neither                         : 914
+  Jaccard(consensus, flagged)     : 0.273
+
+The two methods largely identify DIFFERENT patients -- reported at face value. Low overlap is informative either way: it means consensus failure and the uncertainty-gated detector are picking up partly distinct phenomena, and neither result validates the other.

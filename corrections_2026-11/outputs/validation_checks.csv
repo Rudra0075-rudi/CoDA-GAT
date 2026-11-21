@@ -1,0 +1,11 @@
+check,pass,detail
+CORN decoder matches official coral_pytorch decoding,True,coral_pytorch 1.4.0 (verbatim vendored copy; package not importable); 0 mismatches on 200000 random inputs; historical rule disagreed on 75.4%
+historical consensus error matrix reproduced before correcting,True,default-parse rebuild == consensus_failures/error_matrix.csv
+consensus counts recomputed,True,>=19/23: 138 -> 139; 23/23: 57 -> 57; 5 model decisions changed
+pairwise rows not involving the changed model are unchanged,True,max deviation 0.0
+as-stored coding reproduces every historical enrichment summary,True,"flagging_v2 (12 variants + graph_comparison), flagging_v3 CL pruned (2), Test A 2x2"
+planted-error pools contain exact-stage records only,True,"eligible exact = 470, grouped = 0"
+saved primary metrics re-derived from saved predictions,True,"AUROC / macro-F1 / balanced accuracy for all 440 B7, m=1, m=3 and B9 runs; predictions == argmax"
+graph reconstructions match learned_graph/edge_budget_audit.csv,True,"random_graph and learned graphs, all 8 folds"
+corrected figures written,True,"fig17, fig18, fig19, fig20, fig21, flagging_v2_panel"
+no historical file modified by this run,True,8121 tracked files outside scripts/ hashed before and after; changed: []

@@ -1,0 +1,16 @@
+historical error matrix rebuilt independently (default CSV parse): reproduces consensus_failures/error_matrix.csv exactly
+changed model decisions: 5
+  GSM6590212 (GSE213621, grouped_F0_F1, y=0) bulk_top1000__random_forest: error True -> False
+  GSM6590214 (GSE213621, grouped_F0_F1, y=0) bulk_top1000__random_forest: error True -> False
+  GSM6590269 (GSE213621, exact, y=1) bulk_top1000__random_forest: error False -> True
+  GSM789158 (GSE31803, grouped_F3_F4, y=1) bulk_top1000__random_forest: error False -> True
+  GSM789177 (GSE31803, grouped_F3_F4, y=1) bulk_top1000__random_forest: error False -> True
+
+consensus-failure counts (historical -> corrected):
+  >= 19/23 wrong: 138 -> 139 (+1 entered, -0 left)
+  >= 21/23 wrong: 108 -> 108 (+0 entered, -0 left)
+  >= 23/23 wrong: 57 -> 57 (+0 entered, -0 left)
+    level 80%: GSM789177 (GSE31803, grouped_F3_F4) 18 -> 19 models wrong: entered
+
+pairwise rows not involving ['bulk_top1000__random_forest']: 231/253, max |historical - corrected| over ['jaccard_observed', 'jaccard_expected_chance', 'jaccard_perm_null_mean', 'mcc'] = 0
+pairs involving the changed model(s): 22; max |change in observed Jaccard| = 0.0102

@@ -61,6 +61,7 @@ from run_full_experiment_b7 import (
     mc_dropout_probs, load_edge_index_generic, load_fold_info, build_model,
 )
 from ablations_b9 import load_split_for_ablation, build_edge_index_and_perm, ABLATIONS
+from stage_labels import exact_stage_mask
 
 REPO = Path(__file__).resolve().parent.parent
 FOLDS_DIR = REPO / "folds"
@@ -445,6 +446,7 @@ def build_master(conditions, modes, folds, n_passes, recompute):
         meta = labels.loc[test_ids]
         y_true = meta["y_T1_significant"].to_numpy().astype(int)
         stage = meta["stage"].to_numpy()
+        resolution = meta["resolution"].to_numpy()
         cohort = fold_dir.name.split("_", 1)[1]
 
         for condition in conditions:
@@ -479,7 +481,7 @@ def build_master(conditions, modes, folds, n_passes, recompute):
                     "test_cohort": cohort, "sample_id": test_ids,
                     "p_f2plus": np.mean(p_seeds, axis=0),
                     "uncertainty": np.mean(u_seeds, axis=0),
-                    "y_true": y_true, "stage": stage,
+                    "y_true": y_true, "stage": stage, "resolution": resolution,
                 }))
 
     master = pd.concat(rows, ignore_index=True)
@@ -615,13 +617,21 @@ def paired_log_or_ci(flags_a, flags_b, adjacent, folds, n_boot=N_BOOT, seed=BOOT
 
 
 def describe_variant(name, df, flags, runs=None, condition=None, extra=None):
-    """Every pre-registered metric for one variant, in one row."""
-    adjacent = df["stage"].isin(ADJACENT_STAGES).to_numpy()
-    two_stage = df["stage"].isin(TWO_STAGE_STAGES).to_numpy()
-    folds = df["fold"].to_numpy()
+    """Every pre-registered metric for one variant, in one row.
+
+    2026-11 audit: stage metrics (odds ratio, CI, two-stage share, n_F0..n_F4)
+    use exact-stage records only -- grouped F0-F1 / F3-F4 records are stored as
+    F0 / F3 and have no exact stage. Flag counts, rate, stability and direction
+    use every record, because the binary label is valid for all of them."""
+    exact = exact_stage_mask(df)
+    adjacent = df["stage"].isin(ADJACENT_STAGES).to_numpy()[exact]
+    two_stage = df["stage"].isin(TWO_STAGE_STAGES).to_numpy()[exact]
+    folds = df["fold"].to_numpy()[exact]
     n_flag = int(flags.sum())
-    orr, p, (a, b, c, d) = fisher_or(flags, adjacent)
-    lo, hi = bootstrap_ci(flags, adjacent, folds) if n_flag else (np.nan, np.nan)
+    flags_exact = flags[exact]
+    n_flag_exact = int(flags_exact.sum())
+    orr, p, (a, b, c, d) = fisher_or(flags_exact, adjacent)
+    lo, hi = bootstrap_ci(flags_exact, adjacent, folds) if n_flag_exact else (np.nan, np.nan)
 
     stability = np.nan
     if runs is not None and not runs.empty and condition is not None and n_flag:
@@ -638,18 +648,18 @@ def describe_variant(name, df, flags, runs=None, condition=None, extra=None):
     too_high = int((flags & (y == 1)).sum())
 
     row = {
-        "variant": name, "n_flagged": n_flag,
+        "variant": name, "n_flagged": n_flag, "n_flagged_exact_stage": n_flag_exact,
         "flag_rate": n_flag / len(df) if len(df) else np.nan,
         "or_f1f2": orr, "or_p_onesided": p,
         "log_or_ci_lo": lo, "log_or_ci_hi": hi,
         "n_flag_adjacent": a, "n_flag_distant": b,
-        "two_stage_share": float(two_stage[flags].mean()) if n_flag else np.nan,
+        "two_stage_share": float(two_stage[flags_exact].mean()) if n_flag_exact else np.nan,
         "stability_share": stability,
         "dir_recorded_too_low": too_low, "dir_recorded_too_high": too_high,
         "dir_split_low_share": too_low / n_flag if n_flag else np.nan,
     }
     for s in ALL_STAGES:
-        row[f"n_{s}"] = int(((df["stage"] == s).to_numpy() & flags).sum())
+        row[f"n_{s}"] = int(((df["stage"] == s).to_numpy() & flags & exact).sum())
     if extra:
         row.update(extra)
     return row
@@ -657,14 +667,16 @@ def describe_variant(name, df, flags, runs=None, condition=None, extra=None):
 
 def per_cohort_table(name, df, flags):
     adjacent = df["stage"].isin(ADJACENT_STAGES).to_numpy()
+    exact = exact_stage_mask(df)
     rows = []
     for (fold, cohort), g in df.groupby(["fold", "test_cohort"]):
         m = (df["fold"] == fold).to_numpy()
-        f, adj = flags[m], adjacent[m]
+        f, adj = flags[m & exact], adjacent[m & exact]
         orr, p, (a, b, c, d) = fisher_or(f, adj)
         rows.append({"variant": name, "fold": fold, "test_cohort": cohort,
                       "n_patients": int(m.sum()), "n_flagged": int(f.sum()),
-                      "flag_rate": float(f.mean()), "or_f1f2": orr, "or_p_onesided": p,
+                      "n_exact_stage": int((m & exact).sum()),
+                      "flag_rate": float(flags[m].mean()), "or_f1f2": orr, "or_p_onesided": p,
                       "n_flag_adjacent": a, "n_flag_distant": b})
     return pd.DataFrame(rows)
 
@@ -684,11 +696,12 @@ def plot_stage_distributions(df_primary, variant_flags, path_png, path_pdf):
     ncol = 3
     nrow = int(np.ceil(len(items) / ncol))
     fig, axes = plt.subplots(nrow, ncol, figsize=(4.4 * ncol, 3.3 * nrow), squeeze=False)
-    bg = df_primary["stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
+    exact = exact_stage_mask(df_primary)
+    bg = df_primary.loc[exact, "stage"].value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
     x = np.arange(len(ALL_STAGES))
 
     for ax, (name, flags) in zip(axes.ravel(), items):
-        sub = df_primary.loc[flags, "stage"]
+        sub = df_primary.loc[flags & exact, "stage"]
         share = sub.value_counts(normalize=True).reindex(ALL_STAGES, fill_value=0)
         ax.bar(x - 0.2, bg * 100, 0.38, color=NEUTRAL, label="all held-out patients")
         ax.bar(x + 0.2, share * 100, 0.38, color=CODAGAT, label="flagged")
@@ -881,8 +894,9 @@ def main():
     say("  ranking: disagreement > 0.5, then lowest MC-dropout uncertainty first")
     say("")
 
-    adjacent = prim["stage"].isin(ADJACENT_STAGES).to_numpy()
-    folds_arr = prim["fold"].to_numpy()
+    exact_prim = exact_stage_mask(prim)
+    adjacent = prim["stage"].isin(ADJACENT_STAGES).to_numpy()[exact_prim]
+    folds_arr = prim["fold"].to_numpy()[exact_prim]
     graph_rows, matched_flags = [], {}
 
     for n_target in targets:
@@ -928,7 +942,8 @@ def main():
             fa = matched_flags.get((cond, n_target))
             if fa is None:
                 continue
-            mean, lo, hi = paired_log_or_ci(fa, fe, adjacent, folds_arr, args.n_boot)
+            # exact-stage records only; matched counts were set over all records
+            mean, lo, hi = paired_log_or_ci(fa[exact_prim], fe[exact_prim], adjacent, folds_arr, args.n_boot)
             if not np.isfinite(lo):
                 continue
             verdict = ("BETTER than no graph" if lo > 0 else

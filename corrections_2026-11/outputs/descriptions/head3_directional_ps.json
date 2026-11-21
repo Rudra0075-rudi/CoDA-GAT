@@ -1,0 +1,12 @@
+{
+  "training_target_column": "deviation_score (ablations_b9.py, baselines_b3.py, run_full_experiment_b7.py)",
+  "deviation_score_equals_directional": true,
+  "deviation_score_equals_directional_ps": false,
+  "handoff_head3_arms": [
+    "off",
+    "directional",
+    "directional_ps"
+  ],
+  "handoff_head3_decision": "deferred_to_ablation_row_B",
+  "files_reporting_a_directional_ps_model": []
+}

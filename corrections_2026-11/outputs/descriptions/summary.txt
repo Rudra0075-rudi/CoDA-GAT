@@ -1,0 +1,31 @@
+Experiment descriptions vs code and files
+==============================================================================
+
+                                                   n_directed      n_unordered_pairs      n_reverse_present      self_loops     unordered_pairs_shared_with_STRING     
+                                                          min  max               min  max               min  max        min max                                min  max
+graph                                                                                                                                                                  
+STRING (shared/graph_edges.csv)                           642  642               321  321               642  642          0   0                                321  321
+coexpr_graph (learned; file stores each pair once)        642  642               321  321               642  642          0   0                                 65   91
+e2e_graph (learned; file stores each pair once)           642  642               321  321               642  642          0   0                                 29   48
+random_graph (B9)                                         642  642               595  607                70   94          0   0                                 62   90
+shuffled_graph (B9)                                       642  642               321  321               642  642          0   0                                 28   53
+
+random/learned reconstructions match learned_graph/edge_budget_audit.csv: True
+
+ m     directory  exists  done_markers  master_rows
+ 1 results_b7_m1    True            40           40
+ 3 results_b7_m3    True            40           40
+ 7 results_b7_m7   False             0            0
+
+{
+  "training_target_column": "deviation_score (ablations_b9.py, baselines_b3.py, run_full_experiment_b7.py)",
+  "deviation_score_equals_directional": true,
+  "deviation_score_equals_directional_ps": false,
+  "handoff_head3_arms": [
+    "off",
+    "directional",
+    "directional_ps"
+  ],
+  "handoff_head3_decision": "deferred_to_ablation_row_B",
+  "files_reporting_a_directional_ps_model": []
+}
