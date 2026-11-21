@@ -14,6 +14,12 @@ computation is the calibration-cohort MC-dropout pools needed to derive
 uncertainty thresholds beyond p40 (see module docstring context / the
 Step 1 note in the accompanying report -- Test A computed these in
 memory but never wrote them to disk).
+
+STAGE RESOLUTION (2026-11 audit): enrichment_test now scores exact-stage
+records only (see stage_labels.py), so the resolution column is attached to
+Test A's saved values below. The historical test_b_rate/ outputs counted
+grouped F0-F1 / F3-F4 records under their stored stage code and could not be
+recomputed without re-running calibration MC-dropout, which was never saved.
 """
 
 import os
@@ -96,7 +102,8 @@ def extended_sweep(df, cal_pools, percentiles, predicted_rate):
         n_flag = int(flagged.sum())
         rate = n_flag / len(df)
         rate_by_fold = df.assign(flagged=flagged).groupby("fold")["flagged"].mean()
-        prop_f2 = float(df.loc[flagged, "stage"].eq("F2").mean()) if n_flag > 0 else float("nan")
+        flagged_exact = flagged & (df["resolution"] == "exact").to_numpy()
+        prop_f2 = float(df.loc[flagged_exact, "stage"].eq("F2").mean()) if flagged_exact.any() else float("nan")
 
         row = {
             "uncertainty_percentile": q, "n_flagged": n_flag, "pooled_flagging_rate": rate,
@@ -202,9 +209,15 @@ def main():
     parser.add_argument("--predicted-rate", type=float, default=PREDICTED_MISASSIGNMENT_RATE)
     parser.add_argument("--tolerance", type=float, default=0.05,
                          help="absolute rate tolerance (e.g. 0.05 = 5pp) used to judge 'near' the predicted rate")
+    parser.add_argument("--out-dir", type=Path, default=OUT_DIR,
+                        help="where to write results; the historical test_b_rate/ is never overwritten")
     args = parser.parse_args()
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir = args.out_dir
+    if (out_dir / "threshold_sweep_extended.csv").exists():
+        raise SystemExit(f"{out_dir / 'threshold_sweep_extended.csv'} already exists (historical record). "
+                         f"Refusing to overwrite it; pass --out-dir <new directory>.")
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     log("Test B: the rate-consistency check")
     log(f"Predicted latent misassignment rate: {args.predicted_rate:.1%}")
@@ -212,6 +225,9 @@ def main():
 
     log("loading Test A's saved per-sample values (test-side; already computed, not recomputed)...")
     df = pd.read_csv(TEST_A_DIR / "per_sample_values.csv")
+    if "resolution" not in df.columns:
+        labels_df = pd.read_parquet(SHARED_DIR / "labels.parquet")
+        df["resolution"] = labels_df.loc[df["sample_id"], "resolution"].to_numpy()
     log(f"    {len(df)} test samples across {df['fold'].nunique()} folds")
 
     log("recomputing calibration-cohort MC-dropout uncertainty pools -- the one piece Test A "
@@ -223,7 +239,7 @@ def main():
 
     log("Steps 2+3: extended threshold sweep with adjacency enrichment at every threshold...")
     sweep_df = extended_sweep(df, cal_pools, EXTENDED_PERCENTILES, args.predicted_rate)
-    sweep_df.to_csv(OUT_DIR / "threshold_sweep_extended.csv", index=False)
+    sweep_df.to_csv(out_dir / "threshold_sweep_extended.csv", index=False)
     for _, row in sweep_df.iterrows():
         log(f"    p{int(row['uncertainty_percentile']):>2}: rate={row['pooled_flagging_rate']:6.1%}  "
             f"OR={row['odds_ratio']:6.3f}  fisher_p={row['fisher_p']:.4f}  "
@@ -237,14 +253,14 @@ def main():
     log("Step 4: building operating curve...")
     operating_curve_df = sweep_df[["uncertainty_percentile", "pooled_flagging_rate",
                                     "odds_ratio", "fisher_p", "n_flagged"]].copy()
-    operating_curve_df.to_csv(OUT_DIR / "operating_curve.csv", index=False)
+    operating_curve_df.to_csv(out_dir / "operating_curve.csv", index=False)
     make_operating_curve_plot(sweep_df, args.predicted_rate, args.reference_percentile,
-                               OUT_DIR / "operating_curve.png")
-    log(f"    saved {OUT_DIR / 'operating_curve.png'}")
+                               out_dir / "operating_curve.png")
+    log(f"    saved {out_dir / 'operating_curve.png'}")
 
     log(f"Step 5: disagreement-threshold sensitivity (uncertainty held at p{args.reference_percentile})...")
     disagree_df = disagreement_sensitivity(df, cal_pools, args.reference_percentile, DISAGREEMENT_SWEEP)
-    disagree_df.to_csv(OUT_DIR / "disagreement_sensitivity.csv", index=False)
+    disagree_df.to_csv(out_dir / "disagreement_sensitivity.csv", index=False)
     for _, row in disagree_df.iterrows():
         tag = "non-arbitrary default" if row["is_nonarbitrary_default"] else "sensitivity check only"
         log(f"    disagreement>{row['disagreement_threshold']}: rate={row['pooled_flagging_rate']:.1%}  "
@@ -301,12 +317,12 @@ def main():
         "=" * 78,
     ]
     summary = "\n".join(summary_lines)
-    with open(OUT_DIR / "summary.txt", "w") as f:
+    with open(out_dir / "summary.txt", "w") as f:
         f.write(summary + "\n")
     for line in summary_lines:
         log(line)
 
-    log(f"outputs saved to {OUT_DIR}")
+    log(f"outputs saved to {out_dir}")
 
 
 if __name__ == "__main__":

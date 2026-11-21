@@ -1,0 +1,42 @@
+Adjacency test on consensus failures
+============================================================
+
+Stage tests use the 800 exact-stage records. The 264 grouped-label records (grouped_F0_F1, grouped_F3_F4) keep their binary errors in
+the consensus counts but have no exact stage, so they are tabulated separately.
+
+>= 80% of models wrong  (n=139 consensus failures, 108 with an exact stage)
+  exact-stage distribution (consensus failure vs rest):
+                F0   F1   F2   F3  F4
+    flagged     11   26   56   15   0
+    unflagged  145  153  235  115  44
+  grouped-label records (not stage-tested):
+               grouped_F0_F1  grouped_F3_F4
+    flagged               28              3
+    unflagged            109            124
+  2x5 chi-square: chi2=21.234, p=0.0002846
+  2x2 Fisher (adjacent ['F1', 'F2'] vs distant, one-sided): OR=2.471, p=4.962e-05
+
+>= 90% of models wrong  (n=108 consensus failures, 84 with an exact stage)
+  exact-stage distribution (consensus failure vs rest):
+                F0   F1   F2   F3  F4
+    flagged      7   18   47   12   0
+    unflagged  149  161  244  118  44
+  grouped-label records (not stage-tested):
+               grouped_F0_F1  grouped_F3_F4
+    flagged               24              0
+    unflagged            113            127
+  2x5 chi-square: chi2=21.313, p=0.0002744
+  2x2 Fisher (adjacent ['F1', 'F2'] vs distant, one-sided): OR=2.627, p=0.000128
+
+>= 100% of models wrong  (n=57 consensus failures, 43 with an exact stage)
+  exact-stage distribution (consensus failure vs rest):
+                F0   F1   F2   F3  F4
+    flagged      4    7   24    8   0
+    unflagged  152  172  267  122  44
+  grouped-label records (not stage-tested):
+               grouped_F0_F1  grouped_F3_F4
+    flagged               14              0
+    unflagged            123            127
+  2x5 chi-square: chi2=10.553, p=0.03207
+  2x2 Fisher (adjacent ['F1', 'F2'] vs distant, one-sided): OR=1.871, p=0.04559
+

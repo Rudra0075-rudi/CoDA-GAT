@@ -356,6 +356,7 @@ def build_pool(condition, folds):
         meta_rows.append(pd.DataFrame({
             "fold": fid, "test_cohort": fold_dir.name.split("_", 1)[1],
             "sample_id": test_ids, "y_true": y_test, "stage": meta["stage"].to_numpy(),
+            "resolution": meta["resolution"].to_numpy(),
         }))
     meta = pd.concat(meta_rows, ignore_index=True) if meta_rows else pd.DataFrame()
     return per_fold, meta, missing

@@ -1,0 +1,6 @@
+sample_id,fold,cohort,stage_stored,resolution,y_true,model,error_historical,error_corrected
+GSM6590212,4,GSE213621,F0,grouped_F0_F1,0,bulk_top1000__random_forest,True,False
+GSM6590214,4,GSE213621,F0,grouped_F0_F1,0,bulk_top1000__random_forest,True,False
+GSM6590269,4,GSE213621,F2,exact,1,bulk_top1000__random_forest,False,True
+GSM789158,6,GSE31803,F3,grouped_F3_F4,1,bulk_top1000__random_forest,False,True
+GSM789177,6,GSE31803,F3,grouped_F3_F4,1,bulk_top1000__random_forest,False,True

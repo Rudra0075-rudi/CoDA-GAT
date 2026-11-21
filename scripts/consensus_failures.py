@@ -25,6 +25,22 @@ feature tensor cannot distinguish label error from shared-input correlation.
 The adjacency result is still computed and reported as a descriptive finding.
 
 No retraining, no threshold re-tuning. Saved predictions only.
+
+2026-11 AUDIT CORRECTIONS (retrospective; not part of any preregistration):
+  1. Baseline error sets use each model's SAVED pred_test column. The
+     historical run re-derived decisions as p_test >= threshold after a
+     default-precision CSV parse, which flipped 5 bulk_top1000__random_forest
+     decisions whose probability equals the threshold in decimal. The saved
+     column was computed in memory before the CSV write and is authoritative;
+     it is checked here against a round-trip-precision parse. The GAT
+     ensemble decision is unchanged: 5-seed mean P(F2+) >= 0.5.
+  2. Stage-level tests use exact-stage records only (stage_labels.py);
+     grouped F0-F1 / F3-F4 records stay in every binary-error quantity.
+  3. The analytical independence expectation and the within-fold permutation
+     null are reported as two different references, and between-group means
+     are given both pair-weighted and with equal weight per group pair.
+  4. Results go to --out-dir; the historical consensus_failures/ is never
+     overwritten.
 """
 
 import os
@@ -34,6 +50,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 import argparse
 import itertools
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -41,7 +58,7 @@ import pandas as pd
 
 from sklearn.metrics import matthews_corrcoef
 
-from test_a_adjacency import enrichment_test, parse_fold_index, ADJACENT_STAGES
+from stage_labels import enrichment_test, grouped_table, ADJACENT_STAGES, GROUPED_RESOLUTIONS
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 FOLDS_DIR = REPO_ROOT / "folds"
@@ -121,6 +138,13 @@ def log(msg):
     print(f"[consensus] {msg}", flush=True)
 
 
+def parse_fold_index(dir_name: str) -> int:
+    m = re.match(r"fold(\d+)_", dir_name)
+    if not m:
+        raise ValueError(f"cannot parse fold index from directory name: {dir_name}")
+    return int(m.group(1))
+
+
 # ==========================================================================
 # Discovery + loading (saved predictions only)
 # ==========================================================================
@@ -148,12 +172,17 @@ def run_dir_for(spec, fold_id, test_cohort, seed):
 def load_baselines_csv_probs(name, spec, index_df):
     """
     Reads B3's persisted per-sample CSVs and aligns them to index_df's sample
-    order. Returns (p_test, per-sample threshold).
+    order. Returns (p_test, per-sample threshold, saved decision, saved y_true).
 
     These models were run at a SINGLE seed (B3's default, 42) and evaluated at
-    a calibration-tuned threshold. Both facts are preserved here, not changed:
-    the threshold comes from the file, so each model's error set matches how it
-    was originally evaluated.
+    a calibration-tuned threshold. The decision is the saved pred_test column,
+    which baselines_b3.py computed in memory as p_test >= threshold before the
+    CSV write -- so each model's error set is exactly how it was originally
+    evaluated. Re-deriving it from the CSV text is not equivalent: the tuned
+    thresholds come from np.arange (e.g. 0.45000000000000007), and a
+    default-precision parse can round a probability of 0.45 and that threshold
+    to the same double. A round-trip parse must reproduce the saved column;
+    any disagreement is a hard error, not a silent fallback.
     """
     frames = []
     for (fold_id, test_cohort), grp in index_df.groupby(["fold", "test_cohort"], sort=True):
@@ -161,20 +190,30 @@ def load_baselines_csv_probs(name, spec, index_df):
         if not path.exists():
             log(f"    {name}: MISSING {path.relative_to(REPO_ROOT)} -- excluding this model")
             return None
-        df = pd.read_csv(path)
+        df = pd.read_csv(path, float_precision="round_trip")
         absent = set(grp["sample_id"]) - set(df["sample_id"])
         if absent:
             log(f"    {name}: {len(absent)} sample_id(s) absent at fold {fold_id} -- excluding")
             return None
+        if df["sample_id"].tolist() != grp["sample_id"].tolist():
+            log(f"    {name}: fold {fold_id} rows are not in sample_ids.csv order -- realigned by sample_id")
         frames.append(df.set_index("sample_id").loc[grp["sample_id"]].reset_index())
     out = pd.concat(frames, ignore_index=True)
-    return out["p_test"].to_numpy(dtype=float), out["threshold"].to_numpy(dtype=float)
+    p, thr = out["p_test"].to_numpy(dtype=float), out["threshold"].to_numpy(dtype=float)
+    pred = out["pred_test"].to_numpy(dtype=int)
+    mismatch = int(((p >= thr).astype(int) != pred).sum())
+    if mismatch:
+        raise RuntimeError(f"{name}: {mismatch} saved pred_test values disagree with p_test >= threshold "
+                           f"under round-trip parsing -- threshold convention not reproduced")
+    return p, thr, pred, out["y_true"].to_numpy(dtype=int)
 
 
 def load_model_probs(name, spec, index_df, seeds):
-    """Returns (P(F2+) per test sample, per-sample decision threshold), or None.
-    B7/B9 models are seed-averaged .npy and were evaluated at argmax (0.5);
-    B3 baselines are single-seed CSV carrying their own tuned threshold."""
+    """Returns (P(F2+), per-sample threshold, decision, saved y_true or None), or None.
+    B7/B9 models are seed-averaged .npy; their ensemble decision is the
+    5-seed mean P(F2+) >= 0.5 (the original definition, unchanged).
+    B3 baselines are single-seed CSV carrying their own tuned threshold and
+    their saved decision."""
     if spec["source"] == "baselines_csv":
         return load_baselines_csv_probs(name, spec, index_df)
 
@@ -195,7 +234,8 @@ def load_model_probs(name, spec, index_df, seeds):
             seed_probs.append(probs[:, 1])
         per_fold.append(np.mean(seed_probs, axis=0))
     p = np.concatenate(per_fold)
-    return p, np.full(len(p), DECISION_THRESHOLD)
+    thr = np.full(len(p), DECISION_THRESHOLD)
+    return p, thr, (p >= thr).astype(int), None
 
 
 # ==========================================================================
@@ -267,8 +307,29 @@ def agreement_analysis(err_matrix, model_names, fold_ids, n_perm, seed=0):
     return pair_df, rates
 
 
+def _summary_row(level, relation, sub, weighting):
+    return {
+        "level": level, "relation": relation, "weighting": weighting, "n_pairs": len(sub),
+        "mean_jaccard_observed": float(sub["jaccard_observed"].mean()),
+        # analytical reference: E[Jaccard] if the two error sets were independent
+        # with the models' pooled error rates (no fold structure)
+        "mean_jaccard_expected_chance": float(sub["jaccard_expected_chance"].mean()),
+        "mean_jaccard_excess": float(sub["jaccard_excess"].mean()),
+        # empirical reference: within-fold permutation null mean
+        "mean_jaccard_perm_null_mean": float(sub["jaccard_perm_null_mean"].mean()),
+        "mean_jaccard_excess_vs_perm": float((sub["jaccard_observed"] - sub["jaccard_perm_null_mean"]).mean()),
+        "mean_mcc": float(sub["mcc"].mean()),
+        "mean_perm_z": float(sub["jaccard_perm_z"].mean()),
+    }
+
+
 def group_summary(pair_df, registry, level_key):
-    """Within- vs between-group agreement at the requested grouping level."""
+    """Within- vs between-group agreement at the requested grouping level.
+
+    weighting="pair": every model pair counts once (groups with many models
+    dominate). weighting="equal_group_pair": first average within each
+    unordered group pair, then average those means, so e.g. gat-vs-tree
+    (99 pairs) and gat-vs-linear (27 pairs) count equally."""
     def grp(m):
         return registry[m][level_key]
 
@@ -279,28 +340,25 @@ def group_summary(pair_df, registry, level_key):
     pair_df["relation"] = np.where(pair_df["group_a"] == pair_df["group_b"], "within", "between")
 
     for relation, sub in pair_df.groupby("relation"):
-        rows.append({
-            "level": level_key, "relation": relation, "n_pairs": len(sub),
-            "mean_jaccard_observed": float(sub["jaccard_observed"].mean()),
-            "mean_jaccard_expected_chance": float(sub["jaccard_expected_chance"].mean()),
-            "mean_jaccard_excess": float(sub["jaccard_excess"].mean()),
-            "mean_mcc": float(sub["mcc"].mean()),
-            "mean_perm_z": float(sub["jaccard_perm_z"].mean()),
-        })
+        rows.append(_summary_row(level_key, relation, sub, "pair"))
 
     # unordered group-pair key, built explicitly -- a DataFrame.min(axis=1) over
     # string columns is not reliably supported across pandas versions
     pair_df["_g1"] = [min(a, b) for a, b in zip(pair_df["group_a"], pair_df["group_b"])]
     pair_df["_g2"] = [max(a, b) for a, b in zip(pair_df["group_a"], pair_df["group_b"])]
+    pairwise_rows = []
     for (ga, gb), sub in pair_df.groupby(["_g1", "_g2"]):
-        rows.append({
-            "level": f"{level_key}_pairwise", "relation": f"{ga} vs {gb}", "n_pairs": len(sub),
-            "mean_jaccard_observed": float(sub["jaccard_observed"].mean()),
-            "mean_jaccard_expected_chance": float(sub["jaccard_expected_chance"].mean()),
-            "mean_jaccard_excess": float(sub["jaccard_excess"].mean()),
-            "mean_mcc": float(sub["mcc"].mean()),
-            "mean_perm_z": float(sub["jaccard_perm_z"].mean()),
-        })
+        r = _summary_row(f"{level_key}_pairwise", f"{ga} vs {gb}", sub, "pair")
+        r["relation_kind"] = "within" if ga == gb else "between"
+        pairwise_rows.append(r)
+    pw = pd.DataFrame(pairwise_rows)
+    value_cols = [c for c in pw.columns if c.startswith("mean_")]
+    for kind, sub in pw.groupby("relation_kind"):
+        r = {"level": level_key, "relation": kind, "weighting": "equal_group_pair",
+             "n_pairs": int(sub["n_pairs"].sum()), "n_group_pairs": len(sub)}
+        r.update({c: float(sub[c].mean()) for c in value_cols})
+        rows.append(r)
+    rows += pw.drop(columns="relation_kind").to_dict("records")
     return pd.DataFrame(rows)
 
 
@@ -313,9 +371,15 @@ def main():
     parser.add_argument("--n-permutations", type=int, default=N_PERMUTATIONS)
     parser.add_argument("--consensus-level", type=float, default=PRIMARY_CONSENSUS_LEVEL,
                          help="fraction of models that must be wrong to call a sample a consensus failure")
+    parser.add_argument("--out-dir", type=Path, default=OUT_DIR,
+                        help="where to write results; the historical consensus_failures/ is never overwritten")
     args = parser.parse_args()
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir = args.out_dir
+    if (out_dir / "error_matrix.csv").exists():
+        raise SystemExit(f"{out_dir / 'error_matrix.csv'} already exists (historical record). "
+                         f"Refusing to overwrite it; pass --out-dir <new directory>.")
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     log("Model-agreement / consensus-failure analysis (saved predictions only, no retraining)")
 
@@ -326,13 +390,16 @@ def main():
     labels_df = pd.read_parquet(SHARED_DIR / "labels.parquet")
     index_df["y_true"] = labels_df.loc[index_df["sample_id"], "y_T1_significant"].to_numpy().astype(int)
     index_df["stage"] = labels_df.loc[index_df["sample_id"], "stage"].to_numpy()
+    index_df["resolution"] = labels_df.loc[index_df["sample_id"], "resolution"].to_numpy()
 
     log("discovering models with SAVED per-sample predictions...")
-    probs, thresholds, used_specs, missing = {}, {}, {}, {}
+    probs, thresholds, decisions, used_specs, missing = {}, {}, {}, {}, {}
     for name, spec in MODEL_REGISTRY.items():
         loaded = load_model_probs(name, spec, index_df, args.seeds)
         if loaded is not None:
-            probs[name], thresholds[name] = loaded
+            probs[name], thresholds[name], decisions[name], saved_y = loaded
+            if saved_y is not None and not np.array_equal(saved_y, index_df["y_true"].to_numpy()):
+                raise RuntimeError(f"{name}: saved y_true disagrees with labels.parquet")
             used_specs[name] = spec
             log(f"    {name:30s} OK  ({spec['variant_group']}, family={spec['architecture_family']})")
         else:
@@ -358,37 +425,37 @@ def main():
 
     # ---- Step 2: error matrix ----
     err_matrix = pd.DataFrame({"sample_id": index_df["sample_id"], "fold": index_df["fold"],
-                                "stage": index_df["stage"], "y_true": index_df["y_true"]})
-    for name, p in probs.items():
-        # each model's OWN threshold: 0.5 (argmax) for the B7/B9 GAT models,
-        # the saved calibration-tuned value for the B3 baselines -- so every
-        # error set matches how that model was originally evaluated
-        pred = (p >= thresholds[name]).astype(int)
-        err_matrix[name] = (pred != index_df["y_true"].to_numpy()).astype(bool)
+                                "stage": index_df["stage"], "resolution": index_df["resolution"],
+                                "y_true": index_df["y_true"]})
+    for name in probs:
+        # GAT models: 5-seed mean P(F2+) >= 0.5 (argmax), as originally defined.
+        # B3 baselines: the saved pred_test at their own calibration-tuned threshold.
+        err_matrix[name] = (decisions[name] != index_df["y_true"].to_numpy()).astype(bool)
 
     model_names = list(probs.keys())
     log(f"Step 2: error matrix = {len(err_matrix)} samples x {len(model_names)} models")
     for name in model_names:
         log(f"    {name:26s} error rate = {err_matrix[name].mean():.1%}")
-    err_matrix.to_csv(OUT_DIR / "error_matrix.csv", index=False)
+    err_matrix.to_csv(out_dir / "error_matrix.csv", index=False)
 
     # ---- Step 3: agreement vs chance ----
-    log("Step 3: pairwise error agreement, observed vs chance...")
+    log("Step 3: pairwise error agreement, observed vs two references...")
     pair_df, rates = agreement_analysis(err_matrix, model_names,
                                          err_matrix["fold"].to_numpy(), args.n_permutations)
-    pair_df.to_csv(OUT_DIR / "pairwise_agreement.csv", index=False)
+    pair_df.to_csv(out_dir / "pairwise_agreement.csv", index=False)
     log(f"    mean observed Jaccard = {pair_df['jaccard_observed'].mean():.3f}  "
-        f"vs chance {pair_df['jaccard_expected_chance'].mean():.3f}  "
-        f"(excess {pair_df['jaccard_excess'].mean():+.3f}, mean MCC {pair_df['mcc'].mean():.3f})")
+        f"vs analytical independence {pair_df['jaccard_expected_chance'].mean():.3f}  "
+        f"vs within-fold permutation null {pair_df['jaccard_perm_null_mean'].mean():.3f}  "
+        f"(mean MCC {pair_df['mcc'].mean():.3f})")
 
     fam_df = pd.concat([group_summary(pair_df, used_specs, "variant_group"),
                         group_summary(pair_df, used_specs, "architecture_family")],
                        ignore_index=True)
-    fam_df.to_csv(OUT_DIR / "family_agreement_summary.csv", index=False)
-    for _, r in fam_df[fam_df["level"] == "variant_group"].iterrows():
-        log(f"    variant_group {r['relation']:8s}: observed {r['mean_jaccard_observed']:.3f} "
-            f"vs chance {r['mean_jaccard_expected_chance']:.3f} "
-            f"(excess {r['mean_jaccard_excess']:+.3f}, z={r['mean_perm_z']:.1f}, n={int(r['n_pairs'])} pairs)")
+    fam_df.to_csv(out_dir / "family_agreement_summary.csv", index=False)
+    for _, r in fam_df[fam_df["level"].isin(["variant_group", "architecture_family"])].iterrows():
+        log(f"    {r['level']} {r['relation']:8s} [{r['weighting']}]: observed {r['mean_jaccard_observed']:.3f} "
+            f"| analytical {r['mean_jaccard_expected_chance']:.3f} | permutation {r['mean_jaccard_perm_null_mean']:.3f} "
+            f"(z={r['mean_perm_z']:.1f}, n={int(r['n_pairs'])} pairs)")
 
     # ---- Step 4: consensus failures ----
     n_models = len(model_names)
@@ -407,31 +474,39 @@ def main():
             f"{int(mask.sum())} samples ({mask.mean():.1%})")
 
     primary_mask = consensus_sets[args.consensus_level]
-    err_matrix.loc[primary_mask, ["sample_id", "fold", "stage", "y_true", "n_models_wrong"]] \
-        .to_csv(OUT_DIR / "consensus_failure_samples.csv", index=False)
+    err_matrix.loc[primary_mask, ["sample_id", "fold", "stage", "resolution", "y_true", "n_models_wrong"]] \
+        .to_csv(out_dir / "consensus_failure_samples.csv", index=False)
 
-    # ---- Step 5: the discriminating adjacency test (Test A's function, unchanged) ----
-    log("Step 5: adjacency test on the consensus-failure set (Test A's enrichment_test, unchanged)...")
-    adj_lines = ["Adjacency test on consensus failures", "=" * 60, ""]
+    # ---- Step 5: the discriminating adjacency test, exact-stage records only ----
+    exact = (err_matrix["resolution"] == "exact").to_numpy()
+    log(f"Step 5: adjacency test on the consensus-failure set -- exact-stage records only "
+        f"({int(exact.sum())} of {len(err_matrix)}; grouped labels have no exact stage)...")
+    adj_lines = ["Adjacency test on consensus failures", "=" * 60, "",
+                 f"Stage tests use the {int(exact.sum())} exact-stage records. The {int((~exact).sum())} "
+                 f"grouped-label records ({', '.join(GROUPED_RESOLUTIONS)}) keep their binary errors in",
+                 "the consensus counts but have no exact stage, so they are tabulated separately.", ""]
     adj_results = {}
     for lvl in sorted(consensus_sets):
         mask = consensus_sets[lvl]
-        if mask.sum() == 0:
-            adj_lines.append(f">={lvl:.0%}: no consensus failures at this level -- test not defined.")
+        if mask[exact].sum() == 0:
+            adj_lines.append(f">={lvl:.0%}: no exact-stage consensus failures at this level -- test not defined.")
             continue
         table_5, (chi2, p_chi2), table_2, (odds_ratio, p_fisher) = enrichment_test(err_matrix, mask)
-        adj_results[lvl] = {"n": int(mask.sum()), "odds_ratio": odds_ratio, "fisher_p": p_fisher,
-                             "chi2": chi2, "chi2_p": p_chi2}
+        adj_results[lvl] = {"n": int(mask.sum()), "n_exact": int(mask[exact].sum()),
+                             "odds_ratio": odds_ratio, "fisher_p": p_fisher, "chi2": chi2, "chi2_p": p_chi2}
         adj_lines += [
-            f">= {lvl:.0%} of models wrong  (n={int(mask.sum())} consensus failures)",
-            "  stage distribution (consensus failure vs rest):",
+            f">= {lvl:.0%} of models wrong  (n={int(mask.sum())} consensus failures, "
+            f"{int(mask[exact].sum())} with an exact stage)",
+            "  exact-stage distribution (consensus failure vs rest):",
             "    " + table_5.to_string().replace("\n", "\n    "),
+            "  grouped-label records (not stage-tested):",
+            "    " + grouped_table(err_matrix, mask).to_string().replace("\n", "\n    "),
             f"  2x5 chi-square: chi2={chi2:.3f}, p={p_chi2:.4g}",
             f"  2x2 Fisher (adjacent {sorted(ADJACENT_STAGES)} vs distant, one-sided): "
             f"OR={odds_ratio:.3f}, p={p_fisher:.4g}",
             "",
         ]
-    with open(OUT_DIR / "adjacency_test.txt", "w") as f:
+    with open(out_dir / "adjacency_test.txt", "w") as f:
         f.write("\n".join(adj_lines) + "\n")
     for line in adj_lines:
         log("    " + line)
@@ -452,7 +527,8 @@ def main():
         union = both + only_cons + only_flag
         jac = both / union if union else float("nan")
         ov_lines += [
-            f"consensus-failure level: >={args.consensus_level:.0%} of models wrong",
+            f"consensus-failure level: >={args.consensus_level:.0%} of models wrong (all {len(merged)} records; "
+            f"binary errors, so grouped labels are valid here)",
             f"  both consensus AND flagged      : {both}",
             f"  consensus only (not flagged)    : {only_cons}",
             f"  flagged only (not consensus)    : {only_flag}",
@@ -468,7 +544,7 @@ def main():
         ]
     else:
         ov_lines.append(f"{TEST_A_FLAGS} not found -- overlap not computed.")
-    with open(OUT_DIR / "overlap_with_flags.txt", "w") as f:
+    with open(out_dir / "overlap_with_flags.txt", "w") as f:
         f.write("\n".join(ov_lines) + "\n")
     for line in ov_lines:
         log("    " + line)
@@ -487,39 +563,43 @@ def main():
         "",
         f"MODELS INCLUDED ({len(model_names)}): {', '.join(model_names)}",
         f"architecture families present: {families_present}",
+        "decisions: GAT models = 5-seed mean P(F2+) >= 0.5; B3 baselines = saved pred_test",
         "",
     ]
     if n_missing:
-        lines.append(f"MODELS EXCLUDED ({n_missing}) -- no per-sample predictions found on disk. "
-                      "Run the B3 persistence re-run to add them:")
+        lines.append(f"MODELS EXCLUDED ({n_missing}) -- no per-sample predictions found on disk:")
         for fam, models in sorted(missing.items()):
             lines.append(f"  {fam} ({len(models)}): {', '.join(models)}")
     else:
         lines.append("MODELS EXCLUDED: none -- every registered model had per-sample predictions.")
     lines += [
         "",
-        "Sample-level tests below use n = %d held-out samples and are adequately powered."
+        "Sample-level tests below use n = %d held-out samples (binary errors); stage-level"
         % len(err_matrix),
-        "Any fold-level statement (n=8 cohorts) is descriptive and underpowered.",
+        "tests use the %d exact-stage records only. Any fold-level statement (n=8 cohorts)"
+        % int(exact.sum()),
+        "is descriptive and underpowered.",
         "",
-        "AGREEMENT (observed vs chance; raw agreement alone is not interpretable):",
-        f"  mean Jaccard observed {pair_df['jaccard_observed'].mean():.3f} vs chance "
-        f"{pair_df['jaccard_expected_chance'].mean():.3f} "
-        f"(excess {pair_df['jaccard_excess'].mean():+.3f}); mean MCC {pair_df['mcc'].mean():.3f}",
-        "  chance null = within-fold permutation (preserves each model's per-fold error rate,",
-        "  so cohort difficulty differences are not counted as agreement).",
+        "AGREEMENT -- two DIFFERENT references, not interchangeable:",
+        "  analytical = E[Jaccard] for independent error sets at each model's pooled error rate;",
+        "  permutation = mean Jaccard under within-fold shuffling of each model's errors",
+        "  (preserves per-fold error rates, so cohort difficulty is not counted as agreement).",
+        f"  all pairs: observed {pair_df['jaccard_observed'].mean():.3f} | analytical "
+        f"{pair_df['jaccard_expected_chance'].mean():.3f} | permutation "
+        f"{pair_df['jaccard_perm_null_mean'].mean():.3f}; mean MCC {pair_df['mcc'].mean():.3f}",
         "",
     ]
-    for _, r in fam_df[fam_df["level"] == "variant_group"].iterrows():
-        lines.append(f"  variant_group {r['relation']}: observed {r['mean_jaccard_observed']:.3f}, "
-                     f"excess {r['mean_jaccard_excess']:+.3f}, z={r['mean_perm_z']:.1f} "
+    for _, r in fam_df[fam_df["level"].isin(["variant_group", "architecture_family"])].iterrows():
+        lines.append(f"  {r['level']} {r['relation']} [{r['weighting']}]: observed "
+                     f"{r['mean_jaccard_observed']:.3f} | analytical {r['mean_jaccard_expected_chance']:.3f} | "
+                     f"permutation {r['mean_jaccard_perm_null_mean']:.3f}, z={r['mean_perm_z']:.1f} "
                      f"({int(r['n_pairs'])} pairs)")
     lines.append("")
 
     if primary_adj:
         lines += [
             f"ADJACENCY TEST at >={args.consensus_level:.0%} consensus "
-            f"(n={primary_adj['n']} consensus failures):",
+            f"(n={primary_adj['n']} consensus failures, {primary_adj['n_exact']} exact-stage):",
             f"  Fisher one-sided OR={primary_adj['odds_ratio']:.3f}, p={primary_adj['fisher_p']:.4g}",
             "",
         ]
@@ -528,40 +608,32 @@ def main():
         lines += [
             "CONVERGENT FAILURE: NOT ESTABLISHED -- insufficient architectural diversity.",
             "",
-            f"Every included model is the same architecture family ({families_present[0]}): the same",
-            "GAT encoder over the same 26-feature node tensor, differing only in adversary mode,",
-            "graph corruption, or feature subset. Agreement among them is the MAXIMAL shared-input",
-            "case -- exactly the alternative explanation this analysis exists to rule out. The",
-            "adjacency result above is reported as a DESCRIPTIVE finding and must not be presented",
-            "as a kappa-free confirmation of the ceiling.",
-            "",
-            "TO MAKE THIS CLAIM TESTABLE: baselines_b3.py has been patched to persist per-sample",
-            "predictions. Run the persistence re-run (see that script's --only flag) to populate",
-            "baselines/per_sample_predictions/, then re-run this analysis. The tabular stage alone",
-            "adds the linear and tree_ensemble families and makes between-family agreement -- the",
-            "informative quantity -- computable.",
+            f"Every included model is the same architecture family ({families_present[0]}).",
+            "The adjacency result above is DESCRIPTIVE only.",
         ]
     elif primary_adj and primary_adj["fisher_p"] < 0.05 and primary_adj["odds_ratio"] > 1:
         lines += [
-            f"CONVERGENT FAILURE: SUPPORTED -- consensus failures enrich at F1/F2 "
-            f"(OR={primary_adj['odds_ratio']:.2f}, p={primary_adj['fisher_p']:.3g}), consistent with",
-            "label error independently of the kappa inversion.",
+            f"ADJACENCY: exact-stage consensus failures are enriched at F1/F2 "
+            f"(OR={primary_adj['odds_ratio']:.2f}, p={primary_adj['fisher_p']:.3g}). This is",
+            "consistent with, but does not demonstrate, label error: shared inputs and genuinely",
+            "boundary-ambiguous biology predict the same pattern, and the exact-stage subset",
+            "excludes GSE31803 entirely and keeps only exact F2 records of GSE213621.",
         ]
     else:
         lines += [
-            "CONVERGENT FAILURE: NOT SUPPORTED -- consensus failures do not concentrate at the",
-            "decision boundary; convergent failure is more consistent with shared-input",
-            "correlation or genuinely hard cases.",
+            "ADJACENCY: exact-stage consensus failures are NOT significantly enriched at F1/F2;",
+            "this analysis gives no label-error support beyond shared-input correlation or",
+            "genuinely hard cases.",
         ]
 
     lines += ["", "=" * 78]
     summary = "\n".join(lines)
-    with open(OUT_DIR / "summary.txt", "w") as f:
+    with open(out_dir / "summary.txt", "w") as f:
         f.write(summary + "\n")
     log("")
     for line in lines:
         log(line)
-    log(f"outputs saved to {OUT_DIR}")
+    log(f"outputs saved to {out_dir}")
 
 
 if __name__ == "__main__":

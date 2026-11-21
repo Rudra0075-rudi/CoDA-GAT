@@ -1,0 +1,5 @@
+resolution,n_test,eligible_up_F1,eligible_down_F2,eligible_total
+exact,800,179,291,470
+grouped_F0_F1,137,0,0,0
+grouped_F3_F4,127,0,0,0
+ALL,1064,179,291,470

@@ -1,0 +1,62 @@
+Exact-stage adjacency enrichment (F1/F2 vs F0/F3/F4, one-sided Fisher)
+==============================================================================
+
+exact-stage records: 800 of 1064 held-out test records. Excluded from stage tests only:
+  137 grouped F0-F1 (stored F0; F1/F2-boundary membership unknown)
+  127 grouped F3-F4 (stored F3; outside the boundary, not known exact F3)
+Cohort representation changes: GSE31803 contributes 0 exact records, GSE213621 only
+its 107 exact F2 records (see exact_stage_subset_composition.csv). The exact subset
+is therefore NOT representative of all 1,064 records.
+
+source                       flag set                                         exact OR (p)     as-stored OR (p) F0-F1->F1 OR exact w/o GSE213621 OR (p)
+test_a_adjacency             Test A flags (primary)                     2.57 (0.0049) n= 45    2.73 (0.00048)    2.62    2.16 (0.03) n= 33
+flagging_v2                  V1 baseline                                2.78 (0.0034) n= 43    3.01 (0.00024)    3.07    2.41 (0.018) n= 32
+flagging_v2                  V2 two-model: panel72_combined__catboost   1.34 (0.31) n= 26    1.55 (0.15)    1.60    1.64 (0.16) n= 25
+flagging_v2                  V2 two-model: panel72_combined__logreg     2.00 (0.051) n= 34    2.51 (0.0052)    2.16    1.97 (0.068) n= 28
+flagging_v2                  V2 two-model: panel72_full__catboost       1.35 (0.29) n= 29    1.75 (0.082)    1.52    1.57 (0.18) n= 27
+flagging_v2                  V2 two-model: panel72_full__logreg         2.00 (0.051) n= 34    2.51 (0.0052)    2.16    1.97 (0.068) n= 28
+flagging_v2                  V3 stable (>=12/15)                        2.37 (0.14) n= 13    3.21 (0.036)    1.90    2.14 (0.21) n= 10
+flagging_v2                  V4 real_graph @52                          3.83 (0.00031) n= 43    3.00 (0.00016)    3.32    3.27 (0.0031) n= 31
+flagging_v2                  V4 empty_graph @52                         2.10 (0.029) n= 39    1.63 (0.057)    2.35    2.37 (0.015) n= 35
+flagging_v2                  V4 shuffled_graph @52                      3.83 (0.00031) n= 43    3.00 (0.00016)    2.94    4.31 (0.00012) n= 38
+flagging_v2                  V4 real_graph @192                         2.53 (7.1e-07) n=165    2.77 (2.7e-10)    2.41    2.50 (3.3e-06) n=136
+flagging_v2                  V4 empty_graph @192                        2.45 (4.2e-06) n=148    1.96 (2e-05)    2.33    2.77 (4.7e-07) n=131
+flagging_v2                  V4 shuffled_graph @192                     2.71 (3.1e-07) n=153    2.29 (1.9e-07)    2.33    2.73 (8.6e-07) n=127
+flagging_v3                  CL pruned [real_graph]                     2.20 (4.3e-05) n=146    2.28 (6.2e-07)    2.41    2.32 (3.1e-05) n=125
+flagging_v3                  CL pruned [empty_graph]                    1.62 (0.012) n=123    1.87 (0.00034)    1.97    1.75 (0.006) n=108
+consensus_failures (correcte >= 19/23 models wrong                      2.47 (5e-05) n=108    1.99 (0.00012)    3.27    2.99 (1.6e-06) n=100
+consensus_failures (correcte >= 21/23 models wrong                      2.63 (0.00013) n= 84    2.06 (0.00031)    3.96    3.11 (1.1e-05) n= 77
+consensus_failures (correcte >= 23/23 models wrong                      1.87 (0.046) n= 43    1.54 (0.073)    2.97    2.30 (0.011) n= 41
+
+as-stored coding reproduces historical summaries: 15/15
+
+flagging_v2 paired contrast vs empty graph (dlogOR, 95% bootstrap CI). exact_only keeps the
+original matched-count flags, so arms are NOT count-matched within the exact subset:
+     condition  target_n     coding  n_flagged_arm  n_flagged_empty  paired_diff_mean  paired_diff_lo  paired_diff_hi                verdict
+    real_graph        52  as_stored             52               52          0.612772        0.089116        1.189671   BETTER than no graph
+    real_graph        52 exact_only             43               39          0.592849       -0.224244        1.473346 NO DIFFERENCE DETECTED
+shuffled_graph        52  as_stored             52               52          0.608723        0.027201        1.213077   BETTER than no graph
+shuffled_graph        52 exact_only             43               39          0.599995       -0.200004        1.487830 NO DIFFERENCE DETECTED
+    real_graph       192  as_stored            192              192          0.346782        0.060075        0.643464   BETTER than no graph
+    real_graph       192 exact_only            165              148          0.020418       -0.328973        0.378531 NO DIFFERENCE DETECTED
+shuffled_graph       192  as_stored            192              192          0.157122       -0.129586        0.454324 NO DIFFERENCE DETECTED
+shuffled_graph       192 exact_only            153              148          0.099152       -0.280170        0.463865 NO DIFFERENCE DETECTED
+as_stored reproduces flagging_v2/graph_comparison.csv: True
+
+Planted-error eligibility (flagging_v4 pools):
+   resolution  n_test  eligible_up_F1  eligible_down_F2  eligible_total
+        exact     800             179               291             470
+grouped_F0_F1     137               0                 0               0
+grouped_F3_F4     127               0                 0               0
+          ALL    1064             179               291             470
+
+per cohort:
+cohort
+GSE130970     37
+GSE135251    100
+GSE162694     57
+GSE193066     74
+GSE213621    107
+GSE240729     42
+GSE31803       0
+GSE84044      53

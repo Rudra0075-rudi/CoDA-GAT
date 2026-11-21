@@ -20,6 +20,15 @@ relative to a missing H2 layer), confounding the comparison with an
 unintended difference in H3/H4 initialization. Zero-weighting L_H2 gives
 mathematically identical gradients to "H2 absent" for every other part of
 the network, without that confound.
+
+DECODER CORRECTION (2026-11 audit): the h2_ordinal_accuracy / h2_ordinal_mae
+columns of the historical h2_decision/per_fold.csv (folds 0-4 only) were
+computed with the pre-fix corn_predict_stage, which thresholded the CORN
+conditional probabilities directly instead of their cumulative product. The
+logits and checkpoints behind that file were never saved, so those two
+columns cannot be corrected and must not be reported. This script now
+inherits the fixed decoder; it still TRAINS models, so it is not part of the
+analysis-only reproduction, and it refuses to overwrite the historical file.
 """
 
 import os
@@ -230,9 +239,15 @@ def main():
     parser = argparse.ArgumentParser(description="CoDA-GAT Block B4 -- H2 keep-or-kill decision")
     parser.add_argument("--folds", nargs="*", default=None, help="fold dir names (default: all 8)")
     parser.add_argument("--seed", type=int, default=SEED)
+    parser.add_argument("--out-dir", type=Path, default=OUT_DIR,
+                        help="where to write results; the historical h2_decision/ is never overwritten")
     args = parser.parse_args()
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir = args.out_dir
+    if (out_dir / "per_fold.csv").exists():
+        raise SystemExit(f"{out_dir / 'per_fold.csv'} already exists (historical record, pre-fix CORN "
+                         f"decoder). Refusing to overwrite it; pass --out-dir <new directory>.")
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     fold_dirs = sorted(p for p in FOLDS_DIR.iterdir() if p.is_dir()) if args.folds is None \
         else [FOLDS_DIR / f for f in args.folds]
@@ -277,7 +292,7 @@ def main():
                 "h2_ordinal_n_exact_label_test": result_on["ordinal"]["n_exact_label_test"],
             })
         per_fold_rows.append(row)
-        pd.DataFrame(per_fold_rows).to_csv(OUT_DIR / "per_fold.csv", index=False)
+        pd.DataFrame(per_fold_rows).to_csv(out_dir / "per_fold.csv", index=False)
 
     df = pd.DataFrame(per_fold_rows)
     log("building decision summary...")
@@ -297,7 +312,7 @@ def main():
             "wilcoxon_p": p_value,
         })
     summary_df = pd.DataFrame(summary_rows)
-    summary_df.to_csv(OUT_DIR / "summary.csv", index=False)
+    summary_df.to_csv(out_dir / "summary.csv", index=False)
 
     primary = summary_df[summary_df["metric"] == "macro_f1"].iloc[0]
     diff_mean, diff_std, p_value = primary["diff_mean"], primary["diff_std"], primary["wilcoxon_p"]
@@ -319,12 +334,12 @@ def main():
         f"treat as a decision aid, not a statistical proof.")
     log("=" * 70)
 
-    with open(OUT_DIR / "readout.txt", "w") as f:
+    with open(out_dir / "readout.txt", "w") as f:
         f.write(f"Keeping H2 {readout} the primary task on average "
                 f"(mean macro-F1 diff = {diff_mean:+.4f} +/- {diff_std:.4f} across {len(df)} folds, "
                 f"Wilcoxon p={p_value:.4f}).\n")
 
-    log(f"saved: {OUT_DIR / 'per_fold.csv'}, {OUT_DIR / 'summary.csv'}, {OUT_DIR / 'readout.txt'}")
+    log(f"saved: {out_dir / 'per_fold.csv'}, {out_dir / 'summary.csv'}, {out_dir / 'readout.txt'}")
     log("Block B4 complete.")
 
 

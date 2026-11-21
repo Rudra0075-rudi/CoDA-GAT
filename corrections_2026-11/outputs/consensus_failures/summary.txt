@@ -1,0 +1,48 @@
+==============================================================================
+Consensus-Failure Analysis (kappa-free line of evidence)
+==============================================================================
+
+CONFOUND, STATED UP FRONT: models can agree on their errors simply because they
+share input features. Agreement magnitude alone therefore cannot support a
+label-error reading. The adjacency test (Step 5) is what discriminates: consensus
+failures concentrated at F1/F2 point at the labels; failures scattered across
+F0/F3/F4 point at shared-input correlation or genuinely hard cases.
+
+MODELS INCLUDED (23): codagat_off, codagat_marginal, codagat_conditional, shuffled_graph, random_graph, empty_graph, no_h3_deviation, no_pathway_features, no_fold_fitted_features, bulk_top1000__logreg, bulk_top1000__random_forest, bulk_top1000__xgboost, bulk_top1000__catboost, panel72_combined__logreg, panel72_combined__random_forest, panel72_combined__xgboost, panel72_combined__catboost, panel72_full__logreg, panel72_full__random_forest, panel72_full__xgboost, panel72_full__catboost, boruta_lasso_random_forest, boruta_lasso_xgboost
+architecture families present: ['gat', 'linear', 'tree_ensemble']
+decisions: GAT models = 5-seed mean P(F2+) >= 0.5; B3 baselines = saved pred_test
+
+MODELS EXCLUDED (4) -- no per-sample predictions found on disk:
+  gat (1): fully_connected
+  gnn_gcn_settransformer (1): knowledgegcn_settransformer
+  gnn_sage (1): graphsage_supcon
+  mlp (1): flattened_mlp
+
+Sample-level tests below use n = 1064 held-out samples (binary errors); stage-level
+tests use the 800 exact-stage records only. Any fold-level statement (n=8 cohorts)
+is descriptive and underpowered.
+
+AGREEMENT -- two DIFFERENT references, not interchangeable:
+  analytical = E[Jaccard] for independent error sets at each model's pooled error rate;
+  permutation = mean Jaccard under within-fold shuffling of each model's errors
+  (preserves per-fold error rates, so cohort difficulty is not counted as agreement).
+  all pairs: observed 0.514 | analytical 0.165 | permutation 0.169; mean MCC 0.540
+
+  variant_group between [pair]: observed 0.498 | analytical 0.165 | permutation 0.168, z=22.3 (225 pairs)
+  variant_group within [pair]: observed 0.641 | analytical 0.166 | permutation 0.171, z=31.5 (28 pairs)
+  variant_group between [equal_group_pair]: observed 0.500 | analytical 0.165 | permutation 0.168, z=22.4 (225 pairs)
+  variant_group within [equal_group_pair]: observed 0.677 | analytical 0.165 | permutation 0.171, z=34.1 (28 pairs)
+  architecture_family between [pair]: observed 0.441 | analytical 0.165 | permutation 0.167, z=18.6 (159 pairs)
+  architecture_family within [pair]: observed 0.637 | analytical 0.165 | permutation 0.171, z=31.3 (94 pairs)
+  architecture_family between [equal_group_pair]: observed 0.439 | analytical 0.166 | permutation 0.168, z=18.4 (159 pairs)
+  architecture_family within [equal_group_pair]: observed 0.638 | analytical 0.166 | permutation 0.171, z=31.4 (94 pairs)
+
+ADJACENCY TEST at >=80% consensus (n=139 consensus failures, 108 exact-stage):
+  Fisher one-sided OR=2.471, p=4.962e-05
+
+ADJACENCY: exact-stage consensus failures are enriched at F1/F2 (OR=2.47, p=4.96e-05). This is
+consistent with, but does not demonstrate, label error: shared inputs and genuinely
+boundary-ambiguous biology predict the same pattern, and the exact-stage subset
+excludes GSE31803 entirely and keeps only exact F2 records of GSE213621.
+
+==============================================================================

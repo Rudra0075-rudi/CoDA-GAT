@@ -185,8 +185,20 @@ def corn_loss(logits, targets, num_classes):
 
 
 def corn_predict_stage(logits):
-    """Convert CORN logits (N, K-1) to predicted ordinal rank (N,)."""
+    """Convert CORN logits (N, K-1) to predicted ordinal rank (N,).
+
+    Logit k is trained by corn_loss above on the CONDITIONAL task
+    P(y > k | y > k-1) (only samples that survived threshold k-1 enter task k).
+    The unconditional P(y > k) is therefore the cumulative product of the
+    conditional probabilities over tasks 0..k, and the rank is the number of
+    those cumulative probabilities above 0.5 -- as in the official
+    coral_pytorch.dataset.corn_label_from_logits (Shi, Cao & Raschka, 2022).
+    Thresholding the conditional probabilities directly (the pre-2026-11
+    version of this function) over-counts ranks: e.g. conditional
+    [0.3, 0.9, 0.9, 0.9] gave rank 3, whereas P(y > 0) = 0.3 means rank 0.
+    """
     probs = torch.sigmoid(logits)
+    probs = torch.cumprod(probs, dim=1)
     return (probs > 0.5).sum(dim=1)
 
 

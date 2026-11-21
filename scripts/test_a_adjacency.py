@@ -21,6 +21,12 @@ CRITICAL: the flag (disagreement AND low uncertainty) is computed from:
 The test cohort's fine-grained ordinal STAGE label (F0-F4) -- the thing
 this test checks for enrichment -- is never used to construct the flag,
 only to evaluate it afterward.
+
+STAGE RESOLUTION (2026-11 audit): grouped F0-F1 records are stored as "F0"
+and grouped F3-F4 records as "F3". The enrichment test now uses exact-stage
+records only (stage_labels.enrichment_test); grouped records keep their valid
+binary label for flagging and are tabulated separately. The historical
+summary in test_a_adjacency/ counted them under their stored stage code.
 """
 
 import os
@@ -35,13 +41,13 @@ import numpy as np
 import pandas as pd
 import torch
 
-from scipy.stats import chi2_contingency, fisher_exact
 from torch_geometric.loader import DataLoader
 
 from train_fold0_b1 import CoDAGAT, get_device, N_FEATURES, SHARED_DIR, BATCH_SIZE
 from run_full_experiment_b7 import (
     mc_dropout_probs, load_edge_index_generic, load_fold_info, load_split_for_fold,
 )
+from stage_labels import enrichment_test, grouped_table, ADJACENT_STAGES, ALL_STAGES  # noqa: F401
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 FOLDS_DIR = REPO_ROOT / "folds"
@@ -53,8 +59,6 @@ SEEDS = [42, 43, 44, 45, 46]
 THRESHOLD_PERCENTILES = [10, 15, 20, 25, 30, 40]
 PRIMARY_PERCENTILE = 20
 DISAGREEMENT_THRESHOLD = 0.5  # |p - y| > 0.5 <=> the model's argmax prediction flips the label
-ADJACENT_STAGES = {"F1", "F2"}
-ALL_STAGES = ["F0", "F1", "F2", "F3", "F4"]
 SENSIBLE_RATE_LO, SENSIBLE_RATE_HI = 0.15, 0.25
 
 
@@ -108,12 +112,13 @@ def process_fold(fold_dir, edge_index, dev_lookup, labels_df, n_mc_passes):
     fold_labels = labels_df.loc[test_sample_ids]
     y_test = fold_labels["y_T1_significant"].to_numpy().astype(int)
     stage_test = fold_labels["stage"].to_numpy()
+    resolution_test = fold_labels["resolution"].to_numpy()
     disagreement = np.abs(p_test - y_test)
 
     df = pd.DataFrame({
         "fold": fold_id, "test_cohort": test_cohort, "sample_id": test_sample_ids,
         "p_f2plus": p_test, "uncertainty": u_test, "y_true": y_test, "stage": stage_test,
-        "disagreement": disagreement,
+        "resolution": resolution_test, "disagreement": disagreement,
     })
     return df, cal_uncertainty_pool
 
@@ -146,32 +151,6 @@ def threshold_sensitivity(df, cal_uncertainty_by_fold):
     return pd.DataFrame(rows)
 
 
-def enrichment_test(df, flagged):
-    df = df.copy()
-    df["flagged"] = flagged
-    df["adjacency_class"] = np.where(df["stage"].isin(ADJACENT_STAGES), "adjacent", "distant")
-
-    # descriptive: full 2x5 (flagged/unflagged x F0..F4)
-    counts_5 = {stage: [int(((df["stage"] == stage) & df["flagged"]).sum()),
-                         int(((df["stage"] == stage) & ~df["flagged"]).sum())]
-                for stage in ALL_STAGES}
-    table_5 = pd.DataFrame(counts_5, index=["flagged", "unflagged"])
-    try:
-        chi2, p_chi2, _, _ = chi2_contingency(table_5.to_numpy())
-    except ValueError:
-        chi2, p_chi2 = float("nan"), float("nan")
-
-    # primary: 2x2 Fisher's exact (adjacent F1/F2 vs distant F0/F3/F4), one-sided
-    n_flag_adj = int(((df["adjacency_class"] == "adjacent") & df["flagged"]).sum())
-    n_flag_dist = int(((df["adjacency_class"] == "distant") & df["flagged"]).sum())
-    n_unflag_adj = int(((df["adjacency_class"] == "adjacent") & ~df["flagged"]).sum())
-    n_unflag_dist = int(((df["adjacency_class"] == "distant") & ~df["flagged"]).sum())
-    table_2 = np.array([[n_flag_adj, n_flag_dist], [n_unflag_adj, n_unflag_dist]])
-    odds_ratio, p_fisher = fisher_exact(table_2, alternative="greater")
-
-    return table_5, (chi2, p_chi2), table_2, (float(odds_ratio), float(p_fisher))
-
-
 # ==========================================================================
 # Main
 # ==========================================================================
@@ -180,9 +159,16 @@ def main():
     parser.add_argument("--folds", nargs="*", default=None)
     parser.add_argument("--primary-percentile", type=int, default=PRIMARY_PERCENTILE, choices=THRESHOLD_PERCENTILES)
     parser.add_argument("--n-mc-passes", type=int, default=30)
+    parser.add_argument("--out-dir", type=Path, default=OUT_DIR,
+                        help="where to write results; the historical test_a_adjacency/ is never overwritten")
     args = parser.parse_args()
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir = args.out_dir
+    if (out_dir / "per_sample_flags.csv").exists():
+        raise SystemExit(f"{out_dir / 'per_sample_flags.csv'} already exists (historical record). "
+                         f"Refusing to overwrite it; pass --out-dir <new directory>. To re-test saved "
+                         f"flags without MC-dropout inference use corrections_2026-11/run_analysis_only.sh.")
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     log("Test A: the adjacency check")
     log("Hypothesis: confident model/label disagreement clusters at F1/F2 (real pathologist")
@@ -207,12 +193,12 @@ def main():
             f"calibration uncertainty pool size={len(cal_pool)}")
 
     df = pd.concat(all_rows, ignore_index=True)
-    df.to_csv(OUT_DIR / "per_sample_values.csv", index=False)
+    df.to_csv(out_dir / "per_sample_values.csv", index=False)
     log(f"per-sample values saved ({len(df)} test samples across {len(fold_dirs)} folds)")
 
     log("Step 4: threshold sensitivity...")
     sens_df = threshold_sensitivity(df, cal_uncertainty_by_fold)
-    sens_df.to_csv(OUT_DIR / "threshold_sensitivity.csv", index=False)
+    sens_df.to_csv(out_dir / "threshold_sensitivity.csv", index=False)
     for _, row in sens_df.iterrows():
         log(f"    uncertainty <= calibration p{int(row['uncertainty_percentile'])}: "
             f"pooled flagging rate = {row['pooled_flagging_rate']:.1%}")
@@ -220,15 +206,18 @@ def main():
     log(f"primary threshold: calibration uncertainty percentile {args.primary_percentile}")
     flagged, thresholds = compute_flags(df, cal_uncertainty_by_fold, args.primary_percentile)
     df["flagged"] = flagged
-    df.to_csv(OUT_DIR / "per_sample_flags.csv", index=False)
+    df.to_csv(out_dir / "per_sample_flags.csv", index=False)
     n_flagged = int(flagged.sum())
     rate = n_flagged / len(df)
     log(f"    {n_flagged}/{len(df)} samples flagged ({rate:.1%})")
 
     table_5, (chi2, p_chi2), table_2, (odds_ratio, p_fisher) = enrichment_test(df, flagged)
-    table_5.to_csv(OUT_DIR / "stage_distribution_5class.csv")
+    n_exact = int((df["resolution"] == "exact").sum())
+    g_table = grouped_table(df, flagged)
+    table_5.to_csv(out_dir / "stage_distribution_5class.csv")
+    g_table.to_csv(out_dir / "grouped_label_flags.csv")
     pd.DataFrame(table_2, index=["flagged", "unflagged"], columns=["adjacent_F1F2", "distant_F0F3F4"]).to_csv(
-        OUT_DIR / "adjacency_2x2_table.csv")
+        out_dir / "adjacency_2x2_table.csv")
 
     log("")
     log("STAGE DISTRIBUTION (flagged vs unflagged):")
@@ -262,7 +251,10 @@ def main():
         f"MC-dropout uncertainty <= the {args.primary_percentile}th percentile of that fold's "
         f"CALIBRATION cohort's own MC-dropout distribution (never the test cohort's).", "",
         f"Flagged {n_flagged}/{len(df)} test samples ({rate:.1%}). {rate_note}", "",
-        "Stage distribution (flagged vs unflagged):", table_5.to_string(), "",
+        f"Stage tests use the {n_exact} exact-stage records only; the {len(df) - n_exact} grouped-label",
+        "records (stored as F0 for F0-F1, F3 for F3-F4) are excluded from them and tabulated here:",
+        g_table.to_string(), "",
+        "Stage distribution, exact-stage records (flagged vs unflagged):", table_5.to_string(), "",
         f"2x5 chi-square (all 5 stages): chi2={chi2:.3f}, p={p_chi2:.4f}",
         f"2x2 Fisher's exact (adjacent F1/F2 vs distant F0/F3/F4, one-sided, "
         f"H1: flagged more likely adjacent): odds_ratio={odds_ratio:.3f}, p={p_fisher:.4f}", "",
@@ -270,12 +262,12 @@ def main():
         "=" * 78,
     ]
     summary = "\n".join(summary_lines)
-    with open(OUT_DIR / "summary.txt", "w") as f:
+    with open(out_dir / "summary.txt", "w") as f:
         f.write(summary + "\n")
     for line in summary_lines:
         log(line)
 
-    log(f"outputs saved to {OUT_DIR}")
+    log(f"outputs saved to {out_dir}")
 
 
 if __name__ == "__main__":

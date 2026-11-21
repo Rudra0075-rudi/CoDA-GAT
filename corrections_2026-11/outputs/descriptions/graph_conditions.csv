@@ -1,0 +1,34 @@
+graph,fold,n_directed,n_unordered_pairs,n_reverse_present,self_loops,symmetric,unordered_pairs_shared_with_STRING,matches_edge_budget_audit,nodes_keeping_own_features,rows_in_file
+STRING (shared/graph_edges.csv),all,642,321,642,0,True,321,,,
+random_graph (B9),0,642,599,86,0,False,63,True,,
+shuffled_graph (B9),0,642,321,642,0,True,30,True,0.0,
+random_graph (B9),1,642,602,80,0,False,78,True,,
+shuffled_graph (B9),1,642,321,642,0,True,35,True,0.0,
+random_graph (B9),2,642,606,72,0,False,90,True,,
+shuffled_graph (B9),2,642,321,642,0,True,53,True,1.0,
+random_graph (B9),3,642,607,70,0,False,73,True,,
+shuffled_graph (B9),3,642,321,642,0,True,41,True,2.0,
+random_graph (B9),4,642,607,70,0,False,75,True,,
+shuffled_graph (B9),4,642,321,642,0,True,28,True,3.0,
+random_graph (B9),5,642,595,94,0,False,62,True,,
+shuffled_graph (B9),5,642,321,642,0,True,39,True,1.0,
+random_graph (B9),6,642,604,76,0,False,73,True,,
+shuffled_graph (B9),6,642,321,642,0,True,42,True,0.0,
+random_graph (B9),7,642,596,92,0,False,77,True,,
+shuffled_graph (B9),7,642,321,642,0,True,40,True,0.0,
+coexpr_graph (learned; file stores each pair once),0,642,321,642,0,True,67,True,,321.0
+e2e_graph (learned; file stores each pair once),0,642,321,642,0,True,31,True,,321.0
+coexpr_graph (learned; file stores each pair once),1,642,321,642,0,True,67,True,,321.0
+e2e_graph (learned; file stores each pair once),1,642,321,642,0,True,29,True,,321.0
+coexpr_graph (learned; file stores each pair once),2,642,321,642,0,True,67,True,,321.0
+e2e_graph (learned; file stores each pair once),2,642,321,642,0,True,47,True,,321.0
+coexpr_graph (learned; file stores each pair once),3,642,321,642,0,True,65,True,,321.0
+e2e_graph (learned; file stores each pair once),3,642,321,642,0,True,36,True,,321.0
+coexpr_graph (learned; file stores each pair once),4,642,321,642,0,True,67,True,,321.0
+e2e_graph (learned; file stores each pair once),4,642,321,642,0,True,48,True,,321.0
+coexpr_graph (learned; file stores each pair once),5,642,321,642,0,True,73,True,,321.0
+e2e_graph (learned; file stores each pair once),5,642,321,642,0,True,38,True,,321.0
+coexpr_graph (learned; file stores each pair once),6,642,321,642,0,True,91,True,,321.0
+e2e_graph (learned; file stores each pair once),6,642,321,642,0,True,36,True,,321.0
+coexpr_graph (learned; file stores each pair once),7,642,321,642,0,True,77,True,,321.0
+e2e_graph (learned; file stores each pair once),7,642,321,642,0,True,40,True,,321.0
