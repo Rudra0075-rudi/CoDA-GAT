@@ -69,7 +69,15 @@ must not be used for the LODO protocol.
 MD5 `60e281bbb499152b2f9c756d56ad5a0e`,
 SHA-256 `d869afaa4e40cf55b515a323a15588828c5a449488e6178e711dce06a68012a7`) from
 [Google Drive](https://drive.google.com/file/d/1fhzXBUcLJjSVRjvHdaVMO9Az15mGOZu9/view?usp=drive_link)
-and unzip it into the repository root. It restores `shared/`, the per-fold `train/`, `calibration/`
+and extract only the data folders into the repository root:
+
+```bash
+unzip -n Archive.zip 'shared/*' 'folds/*' 'train/*' 'calibration/*' 'test/*' \
+  'nanostring/raw/*' 'nanostring/rcc/*' 'nanostring/interim/*' 'nanostring/processed/*' -x '*.DS_Store'
+```
+
+Do not unzip the whole archive over the repository: it also holds older copies of `README.md` and
+eight scripts, which would overwrite the current ones. The command above restores `shared/`, the per-fold `train/`, `calibration/`
 and `test/` splits and `fold_info.json` in `folds/`, the top-level `train/`, `calibration/` and
 `test/` copy, and `nanostring/{raw,rcc,interim,processed}/`: the inputs every script reads.
 The fold-0 model outputs in `folds/fold0_GSE130970/outputs*/` stay in git. These 444
