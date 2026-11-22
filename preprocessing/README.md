@@ -40,7 +40,7 @@ From those it rebuilds the rest with the cleaned code and compares each result w
   1. It produced 10,732 common genes; the archive has 10,735. The likely cause is MyGene.info symbol mapping changing between the two runs.
   2. GSE240729 was loaded differently. Its no-ComBat median is 4.17 in the notebook run and 4.62 in the archive.
   3. Group C Cohen's d was edited after the archive was made, from per-class variances with ddof=0 to ddof=1. `folds.COHENS_D_MODE = "archive"` keeps the original formula.
-- **Fix for the first two.** Recover the August revision of the notebook (Colab: File → Revision history; or Drive version history), or deposit the August `interim/expr_cache/`. Without either, describe the deposited notebook as "a later revision that reproduces every downstream step exactly from the archived matrices".
+- **Status of the first two (22 Nov 2026).** The August notebook revision that produced the archive no longer exists, so the upstream difference cannot be closed. All reported results were trained on the archived matrices, which are deposited unchanged (see the Drive link in the top-level README). Describe this notebook in the paper as: "Preprocessing code is provided as a later revision of the original notebook. It reproduces every downstream input to model training exactly from the archived processed matrices; its upstream steps depend on live identifier-mapping services and do not reproduce the archived matrices exactly (10,732 vs 10,735 genes). The archived matrices used for all reported results are deposited."
 
 ## Behaviour that is kept, but must be described in Methods
 
