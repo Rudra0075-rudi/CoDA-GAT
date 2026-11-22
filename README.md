@@ -65,16 +65,24 @@ See `README.txt` for the dataset layout and loading instructions, and
 `FLAT_VIEW_WARNING.txt` for why the top-level `train/`, `calibration/` and `test/` folders
 must not be used for the LODO protocol.
 
-**Expression matrices are stored with [Git LFS](https://git-lfs.com).** Install it
-(`brew install git-lfs && git lfs install`) before cloning, or the `*.parquet` files arrive as
-text pointers. Everything else is plain git.
+**The dataset is not stored in this repository.** Download `Archive.zip` (336,386,271 bytes,
+MD5 `60e281bbb499152b2f9c756d56ad5a0e`,
+SHA-256 `d869afaa4e40cf55b515a323a15588828c5a449488e6178e711dce06a68012a7`) from
+[Google Drive](https://drive.google.com/file/d/1fhzXBUcLJjSVRjvHdaVMO9Az15mGOZu9/view?usp=drive_link)
+and unzip it into the repository root. It restores `shared/`, the per-fold `train/`, `calibration/`
+and `test/` splits and `fold_info.json` in `folds/`, the top-level `train/`, `calibration/` and
+`test/` copy, and `nanostring/{raw,rcc,interim,processed}/`: the inputs every script reads.
+The fold-0 model outputs in `folds/fold0_GSE130970/outputs*/` stay in git. These 444
+files were removed from git on 22 Nov 2026; each was SHA-256 identical to its copy in the archive.
+`preprocessing/` rebuilds and checks the downstream inputs (see `preprocessing/README.md`).
 
 ## Layout
 
 ```
 scripts/              training and analysis scripts (see below)
-shared/               graph, gene panel, labels, expression matrices  [LFS]
-folds/foldN_GSE*/     the LODO protocol: train/ calibration/ test/
+shared/               graph, gene panel, labels, expression matrices  [in Archive.zip]
+folds/foldN_GSE*/     the LODO protocol: train/ calibration/ test/  [in Archive.zip]
+preprocessing/        cleaned preprocessing code + check against the archive
 results_b7/           the main 120-run experiment (8 folds x 3 modes x 5 seeds)
 results_b7_m{1,3}/    augmentation-ratio arms
 baselines/            tabular, hybrid and graph-control baselines

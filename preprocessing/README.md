@@ -1,6 +1,6 @@
 # CoDA-GAT preprocessing: cleaned code and verification
 
-Re-verified on 22 Nov 2026: `verify_against_archive.py` again passes 36/36 checks against `Archive.zip` (5 Aug 2026 handoff) with GTEx v8 downloaded fresh. In this repository, the 5 `shared/*.parquet` matrices (stored in Git LFS) have the same SHA-256 as the archive, and the other 9 files in `shared/` and all 98 files in `folds/` are byte-identical to it. The 7 NanoString parquet files in LFS also match the archive. To run the check on a clone, run `git lfs pull` first.
+Re-verified on 22 Nov 2026: `verify_against_archive.py` again passes 36/36 checks against `Archive.zip` (5 Aug 2026 handoff) with GTEx v8 downloaded fresh. In this repository, the 5 `shared/*.parquet` matrices (stored in Git LFS) have the same SHA-256 as the archive, and the other 9 files in `shared/` and all 98 files in `folds/` are byte-identical to it. The 7 NanoString parquet files in LFS also match the archive. To run the check on a clone, unzip `Archive.zip` from the Drive link in the top-level README into the repository root first.
 
 This folder holds a cleaned version of `preprocessing.ipynb`, as supplied on 21 Nov 2026. The original notebook is not modified.
 
