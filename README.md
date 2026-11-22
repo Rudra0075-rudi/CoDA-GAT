@@ -14,8 +14,8 @@ cross-validation across 8 public GEO cohorts, with conformal prediction for per-
 uncertainty and a cohort adversary for batch invariance.
 
 This repository contains the complete experimental record: every
-script, every saved run and every analysis output, with the preprocessed dataset on Google Drive (see Data) — including the results that did not go
-our way. The negative findings are in here on purpose. A reader who can only find the
+script, every saved run and every analysis output, including the results that did not go
+our way. The preprocessed dataset is on Google Drive (see Data). The negative findings are in here on purpose. A reader who can only find the
 favourable half of a study has no reason to believe the favourable half.
 
 ## Headline results
