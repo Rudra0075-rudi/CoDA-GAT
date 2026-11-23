@@ -1,5 +1,5 @@
-NOTE (23 Nov 2026): this is the dataset note written with the 5 Aug 2026
-archive, kept unchanged below for provenance (several scripts cite it).
+NOTE: this is the dataset note written with the original archive, kept
+unchanged below for provenance (several scripts cite it).
 It is out of date in three ways:
   - The data are not in this repository. Download the deposit described in
     README.md (Data); its own README.md replaces this note.

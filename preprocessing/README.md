@@ -1,21 +1,22 @@
 # CoDA-GAT preprocessing
 
 This folder rebuilds the processed dataset from public data (GEO, ArrayExpress/BioStudies,
-GTEx v8, STRING v12.0) and checks it against the deposited matrices (the 5 Aug 2026 archive).
+GTEx v8, STRING v12.0) and checks it against the deposited matrices.
 
 | File | What it is |
 |---|---|
-| `preprocessing_clean.ipynb` | Part 1: the acquisition, label and per-cohort expression code of the 30 Aug 2026 notebook, the revision that produced the archive. Part 2: calls `coda_preproc`. Outputs cleared. |
+| `preprocessing_clean.ipynb` | Part 1: the acquisition, label and per-cohort expression code of the recovered preprocessing notebook. It is not known to be the exact run that made the deposit, but re-run from GEO it reproduces it (below). Part 2: calls `coda_preproc`. Outputs cleared. |
 | `coda_preproc/` | Every stage from batch integration onwards (integration, GTEx reference, panel and graph, 26 node features, folds, export), plus `symbols.py`, the five-gene rename map. |
 | `verify_against_archive.py` | Rebuilds the downstream outputs from the deposited inputs and compares them with the deposit. |
 | `verification_report.csv` | The result of that comparison: 36/36 checks pass. |
-| `NOTEBOOK_CLEANUP.md` | Cell by cell: what was kept, moved or removed from the August notebook, and why. |
-| `original/` | The October 2026 notebook as supplied, unchanged. It does not reproduce the deposit (10,732 genes); see `original/README.md`. |
+| `end_to_end/` | The end-to-end comparison below: `part2_e2e.py` and its per-file report `e2e_report.csv`. |
+| `NOTEBOOK_CLEANUP.md` | Cell by cell: what was kept, moved or removed from the recovered notebook, and why. |
+| `original/` | A later revision of the notebook, as supplied, unchanged. It does not reproduce the deposit (10,732 genes); see `original/README.md`. |
 
 Run the notebook from this folder (`cd preprocessing`). Set `CODAGAT_ROOT` to a working folder
 with about 10 GB free; downloads and outputs go there, not into the repository.
 
-## Re-run from GEO, end to end (23 Nov 2026)
+## Re-run from GEO, end to end
 
 `preprocessing_clean.ipynb` was run from GEO in a fresh working folder, then through all of Part 2,
 and every one of the 94 deposited data files was compared with the rebuilt one:
@@ -32,14 +33,14 @@ and every one of the 94 deposited data files was compared with the rebuilt one:
 | `handoff.json` | Same fields; differs only in the `generated` timestamp and in the last digit of the Head-3 readout floats |
 
 The small numeric differences are floating-point noise from package versions (here: GEOparse
-2.0.4, mygene 3.2.2, inmoose 0.9.1; the August versions were not recorded).
+2.0.4, mygene 3.2.2, inmoose 0.9.1; the original versions were not recorded).
 
 Two caveats:
 - **STRING.** This environment's network blocks stringdb-downloads.org, so the STRING files were
   synthesised from the deposited edge list (plus below-threshold and off-panel decoy links).
   That checks the graph-building code, not STRING's content. In Colab the notebook downloads
   STRING v12.0 itself.
-- **The five-gene rename map is required.** HGNC has renamed five genes since August
+- **The five-gene rename map is required.** HGNC has renamed five genes since the deposit was built
   (C12orf54 → LYLDT1, IPP → KLHL27, TBRG1 → FYRD1, TBRG4 → FASTKD4, TMEM19 → FAABTP).
   MyGene.info now returns the new names for the five cohorts mapped through it, while the seven
   cohorts whose platform files carry symbols keep the old names, so without the map the shared

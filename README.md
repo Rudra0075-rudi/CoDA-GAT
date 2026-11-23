@@ -47,21 +47,30 @@ Three things follow, and we state them plainly:
    masking. The end-to-end variant's overlap with STRING (Jaccard 0.063) is at chance, and its
    cross-fold stability is 0.312. These observations alone do not establish the cause of instability.
 
-The one place the graph does something measurable is **robustness to missing genes**, and even
-there the result is metric-dependent and is reported as such:
+The one place the graph might do something is **robustness to feature perturbation** (masking
+genes), and even there the result is metric-dependent and, at n = 8 cohorts, directional only.
+With the cohort as the unit (the masking rates within a cohort share its samples, labels and
+trained weights, so they are not independent), the extra drop in performance with the STRING
+graph versus the no-graph control at 50% of genes masked is
+(source: `review_fixes/summary.txt`, Task 1):
 
-| Flatness advantage vs no-graph, over 40 cohort × masking-rate cells | |
+| Extra drop with the graph at 50% masking (cohort-unit 95% t interval, n = 8) | |
 |---|---|
-| AUC | **−0.0077** [−0.0100, −0.0055] — the graph degrades **faster** |
-| macro-F1 | **+0.0105** [+0.0010, +0.0209] — the graph degrades **slower** |
-| balanced accuracy | **+0.0094** [+0.0021, +0.0175] — the graph degrades **slower** |
+| AUC | **−0.0160** [−0.0204, −0.0115]: the graph degrades **faster** (CI excludes 0 at 3 of 5 masking rates) |
+| macro-F1 | +0.0271 [−0.0162, +0.0704]: no clear difference (CI covers 0 at every rate) |
+| balanced accuracy | +0.0217 [−0.0095, +0.0530]: no clear difference (CI covers 0 at every rate) |
 
-Ranking quality falls faster with the graph; thresholded decision quality falls more slowly.
-There is no single-number "robustness advantage", and any claim of one has to name its metric.
+Ranking quality falls faster with the graph; thresholded decision quality may fall more slowly,
+but no interval shows it. An earlier version of this table pooled 40 cohort × rate cells as if
+independent, which narrowed the intervals by about √5. Masking is feature perturbation, not
+missing genes: the `pw_*` features are leave-one-out pathway means, so a masked gene's signal
+stays in its neighbours' features (`corrections_2026-11/UNRESOLVED.md`, item 9).
 
 ## Data
 
 1,366 supervised samples across 12 cohorts; 8 of them (1,064 samples) form the LODO folds.
+1,327 of the 1,366 have the primary F2+ label: the other 39 (GSE276114, staged only as F0–F2)
+are in no fold.
 Node features are a (72 genes × 26 features) tensor per sample: 8 dynamic + 9 static +
 9 fold-fitted. The graph is 72 nodes and 321 undirected STRING edges at confidence ≥ 700.
 
@@ -72,7 +81,7 @@ Each fold's calibration set is a **single separate cohort**, never a random spli
 ("Dataset for: Can gene networks help detect significant liver fibrosis? Graph attention and
 tabular models tested on unseen patient cohorts"): `shared/` (expression matrices, the 148
 controls, labels, graph, panel) and the 8 LODO folds (`train/`, `calibration/`, `test/` tensors
-and `fold_info.json`), 94 files, each byte-identical to the archived 5 Aug 2026 handoff, with
+and `fold_info.json`), 94 files, each byte-identical to the archived dataset the models were trained on, with
 SHA-256 checksums and a README describing the layout. To restore the inputs every script reads:
 
 ```bash
@@ -81,7 +90,7 @@ cp -R CoDA-GAT_data/shared CoDA-GAT_data/folds .   # merges into folds/; no file
 ```
 
 The fold-0 model outputs in `folds/fold0_GSE130970/outputs*/` stay in git. The data files were
-removed from git on 22 Nov 2026; each was SHA-256 identical to its archived copy.
+removed from git; each was SHA-256 identical to its archived copy.
 `preprocessing/` rebuilds the dataset from public GEO data (see `preprocessing/README.md`).
 
 ## Layout
@@ -131,6 +140,11 @@ corrections_2026-11/run_analysis_only.sh
 `preprocessing/verify_against_archive.py` (see `preprocessing/README.md`).
 
 **Re-run the experiments (days on one GPU).** Order matters; later blocks import from earlier ones.
+These scripts write into the committed result folders and skip any run that already has its
+outputs (`results_b7/` holds all 120 `DONE.marker` files), and `train_fold0_b1.py` overwrites
+`folds/fold0_GSE130970/outputs/`. To retrain, use a separate clone and move the result folders
+out of it first. Retrained numbers will not be bit-identical to the saved ones (hardware and
+package versions differ; a CPU re-run of B1 gave fold-0 AUROC 0.814 against the saved 0.812).
 
 ```bash
 python scripts/train_fold0_b1.py          # model + one fold, proof of life
@@ -151,6 +165,11 @@ python scripts/fix_figures.py             # diagnosis + corrected figs 4,5,11-14
 
 ## Things a reader should know
 
+- **Batch correction and fold-fitted features are transductive.** ComBat is fitted within
+  each platform on every cohort, including the held-out test cohorts (no labels are used), and
+  the fold-fitted features 17–25 are fitted on the whole training split, from which the 15%
+  early-stopping set is later drawn. Both are limitations of every reported number
+  (`corrections_2026-11/UNRESOLVED.md`, items 2 and 3).
 - **The conformal APS implementation had a bug.** The randomization term was omitted, which
   makes APS degenerate at K=2 classes: 19.4% of calibration scores are exactly 1.0, so the
   quantile pins at 1.0 and every prediction set contains both classes. `verification_checks/`
