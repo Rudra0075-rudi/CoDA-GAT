@@ -1,15 +1,8 @@
 # Git LFS
 #
-# Only the expression matrices need LFS: shared/bulk_expression.parquet is
-# 137 MB, above GitHub's hard 100 MB per-file limit, so a normal push of it is
-# rejected outright. Tracking the whole *.parquet pattern keeps the 12 matrices
-# consistent with each other (239 MB total, well inside the 1 GB free quota).
-#
-# The .npy arrays are deliberately NOT in LFS. There are 4,481 of them averaging
-# ~31 KB, and the largest is 8.5 MB -- far below any git limit. Pushing them as
-# 4,481 separate LFS objects would be slower, would burn the LFS object budget,
-# and would force every cloner to install git-lfs to get files plain git handles
-# perfectly well.
+# No data files are stored in this repository (the processed data are on
+# Zenodo, DOI 10.5281/zenodo.24470811, and .gitignore excludes them once
+# restored). Any *.parquet added later goes to LFS rather than plain git.
 *.parquet filter=lfs diff=lfs merge=lfs -text
 
 # Treat saved model weights and arrays as binary so git never tries to diff or

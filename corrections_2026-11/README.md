@@ -18,6 +18,9 @@ This is a retrospective audit of the archived study (`Archive.zip`, which is byt
 
 ## Reproduce (analysis only)
 
+Restore `shared/` and `folds/` from the Zenodo deposit first (top-level README, Data). The run needs
+pandas, scipy, matplotlib and torch (CPU is enough; only the CORN check uses it).
+
 ```bash
 corrections_2026-11/run_analysis_only.sh
 # optional: CORAL_PYTORCH_PATH=<dir containing coral_pytorch>  to check CORN against the installed package

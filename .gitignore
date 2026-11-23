@@ -7,3 +7,10 @@ __pycache__/
 
 # CatBoost writes training logs here on every run
 catboost_info/
+
+# Processed data restored from the Zenodo deposit: never commit it
+shared/
+folds/*/train/
+folds/*/calibration/
+folds/*/test/
+folds/*/fold_info.json

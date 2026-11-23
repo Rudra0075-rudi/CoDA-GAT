@@ -10,7 +10,6 @@
 name: coda-gat
 channels:
   - conda-forge
-  - pytorch
 dependencies:
   - python=3.11
   - numpy
@@ -22,6 +21,7 @@ dependencies:
   - pyarrow
   - openpyxl
   - tqdm
+  - ipykernel        # to run preprocessing/preprocessing_clean.ipynb
   - pytorch
   - catboost
   - xgboost
