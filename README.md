@@ -116,6 +116,9 @@ conda env create -f environment.yml
 conda activate coda-gat
 ```
 
+First restore the data from the Zenodo deposit (see Data); every step below reads `shared/`
+and `folds/`.
+
 **Check the reported numbers without training (minutes).** This recomputes every corrected
 number in the paper from the saved predictions and cannot launch training:
 
