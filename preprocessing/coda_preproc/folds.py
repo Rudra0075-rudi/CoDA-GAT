@@ -115,3 +115,31 @@ def fold_tensors(fold, tensor_AB, order, z, sup, panel):
                                     axis=2).astype(np.float32)
         assert_tensor_integrity(out[split], f"fold{fold['fold']}_{split}")
     return out
+
+
+def _js_div(p, q):
+    p, q = np.asarray(p, float), np.asarray(q, float)
+    m = (p + q) / 2
+    kl = lambda a, b: np.sum([x * np.log2(x / y) for x, y in zip(a, b) if x > 0])
+    return 0.5 * kl(p, m) + 0.5 * kl(q, m)
+
+
+def fold_table(folds, sup, task=TASK):
+    """Per-fold sizes, positive rates and label shift (Cell 32's fold_assignment_lodo.csv).
+
+    JS is the Jensen-Shannon divergence (log2) between the test and proper-train
+    label distributions; JS_test_vs_cal compares test with calibration (Cell 32, end).
+    """
+    rows = []
+    for f in folds:
+        rows.append(dict(fold=f["fold"], test_cohort=f["test_cohort"], calibration=f["calibration"],
+                         n_train=len(f["train_idx"]), n_cal=len(f["cal_idx"]), n_test=len(f["test_idx"]),
+                         test_pos=float(sup.loc[f["test_idx"], task].mean()),
+                         train_pos=float(sup.loc[f["train_idx"], task].mean()),
+                         cal_pos=float(sup.loc[f["cal_idx"], task].mean())))
+    fd = pd.DataFrame(rows)
+    fd["JS"] = [_js_div([1 - r.test_pos, r.test_pos], [1 - r.train_pos, r.train_pos])
+                for r in fd.itertuples()]
+    fd["JS_test_vs_cal"] = [_js_div([1 - r.test_pos, r.test_pos], [1 - r.cal_pos, r.cal_pos])
+                            for r in fd.itertuples()]
+    return fd

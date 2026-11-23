@@ -38,7 +38,9 @@ titles. The processing logic of every kept cell is unchanged; the edits are list
 | Panel and STRING | [CELL 29] | `graph.select_panel`, `graph.string_subgraph` |
 | Node tensor | [CELL 30, 30b, 31] | `features.build_tensor_AB` |
 | Folds and Group C | [CELL 32] | `folds.make_folds`, `folds.fold_tensors` (archive Cohen's d) |
-| Export | [CELL 33, 33b, 34] | `export.write_package` (archive-compatible names and columns) |
+| Head-3 record | [CELL 27b, 30b, 31] | `reference.head3_config` (the `head3` block of `handoff.json`) |
+| Fold table | [CELL 32] | `folds.fold_table` (`fold_assignment_lodo.csv`) |
+| Export | [CELL 33, 33b, 34] | `export.write_package`: all 14 `shared/` files, and per fold `train/`, `calibration/`, `test/` and `fold_info.json`. Not written: the flat fold-0 copy and the README notes that Cell 34 added for inspection. |
 
 ## Still redundant, kept on purpose
 
