@@ -1,7 +1,7 @@
 # How `preprocessing_clean.ipynb` was built from the 30 Aug 2026 notebook
 
-Source: `CoDAGAT_preprocessing_notebook_2026-08-30.ipynb`, the revision that produced the
-archived matrices (5 Aug 2026 handoff). Labels such as [CELL 15] are the notebook's own cell
+Source: `CoDAGAT_preprocessing_notebook_2026-08-30.ipynb`. It post-dates the archived matrices
+(5 Aug 2026 handoff), so it is not the exact run that made them; re-run from GEO it reproduces them. Labels such as [CELL 15] are the notebook's own cell
 titles. The processing logic of every kept cell is unchanged; the edits are listed in full.
 
 ## Part 1: kept, in this order

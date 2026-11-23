@@ -232,3 +232,10 @@ The +0.0105 that appears in the README is the masking "flatness advantage" for m
 ## 6. Limitations
 
 These are documented, not fixed; see `UNRESOLVED.md`. Global ComBat and Group C's dependence on training and early-stopping labels were not changed. Changing them would require retraining, and keeping the historical numbers alongside a changed pipeline would misstate what was evaluated.
+
+## 7. Script edits made with the 23 Nov 2026 repository cleanup
+
+Three scripts were edited after the results were produced. None changes a computation:
+
+- `scripts/baselines_b3.py`: reads `shared/healthy_reference.parquet` (the deposited file, and the file the 22 Sep 2026 version read when the saved baseline results were produced). The 6 Oct 2026 commit had switched it to `geo_control_reference.parquet`, which is not in the deposit; that name is kept as a fallback.
+- `scripts/ablations_b9.py`, `scripts/flagging_v3.py`: a printed hint no longer names a local interpreter path.

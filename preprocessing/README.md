@@ -5,7 +5,7 @@ GTEx v8, STRING v12.0) and checks it against the deposited matrices (the 5 Aug 2
 
 | File | What it is |
 |---|---|
-| `preprocessing_clean.ipynb` | Part 1: the acquisition, label and per-cohort expression code of the 30 Aug 2026 notebook, the revision that produced the archive. Part 2: calls `coda_preproc`. Outputs cleared. |
+| `preprocessing_clean.ipynb` | Part 1: the acquisition, label and per-cohort expression code of the 30 Aug 2026 notebook. That revision post-dates the archive (5 Aug 2026), so it is not the exact run that made it, but re-run from GEO it reproduces the archive (below). Part 2: calls `coda_preproc`. Outputs cleared. |
 | `coda_preproc/` | Every stage from batch integration onwards (integration, GTEx reference, panel and graph, 26 node features, folds, export), plus `symbols.py`, the five-gene rename map. |
 | `verify_against_archive.py` | Rebuilds the downstream outputs from the deposited inputs and compares them with the deposit. |
 | `verification_report.csv` | The result of that comparison: 36/36 checks pass. |
