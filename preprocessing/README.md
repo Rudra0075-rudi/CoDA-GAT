@@ -10,6 +10,7 @@ GTEx v8, STRING v12.0) and checks it against the deposited matrices (the 5 Aug 2
 | `verify_against_archive.py` | Rebuilds the downstream outputs from the deposited inputs and compares them with the deposit. |
 | `verification_report.csv` | The result of that comparison: 36/36 checks pass. |
 | `NOTEBOOK_CLEANUP.md` | Cell by cell: what was kept, moved or removed from the August notebook, and why. |
+| `original/` | The October 2026 notebook as supplied, unchanged. It does not reproduce the deposit (10,732 genes); see `original/README.md`. |
 
 Run the notebook from this folder (`cd preprocessing`). Set `CODAGAT_ROOT` to a working folder
 with about 10 GB free; downloads and outputs go there, not into the repository.
