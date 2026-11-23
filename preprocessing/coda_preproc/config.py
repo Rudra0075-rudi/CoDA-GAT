@@ -82,7 +82,7 @@ FEATURES_C = ["disease_specificity", "pathway_coherence", "cross_etiology_consis
               "fibrosis_progression", "cohens_d", "t_statistic", "log_fold_change",
               "per_gene_auc", "rank_score_composite"]
 
-# Columns written to every fold's y.csv in the archived package (Aug 2026).
+# Columns written to every fold's y.csv in the archived package.
 # The notebook's later "v2" export adds exact_stage and eligible_T* columns;
 # set ARCHIVE_COMPATIBLE=False in export.write_package to get those as well.
 META_COLS_ARCHIVE = ["cohort", "stage", "resolution", "tier", "etiology", "platform",

@@ -78,6 +78,7 @@ These replace every F1/F2 "boundary enrichment" result: Test A, consensus failur
    - It does not show that the graph is superior.
 8. **Aggregation:** name it at every AUROC. Use "mean per-seed AUROC" or "AUROC of the 5-seed ensemble", and say that baselines are single-seed.
 9. **Agreement null:** name the reference. Use "analytical independence expectation" or "within-fold permutation null"; they are not interchangeable.
+10. **Masking intervals:** use the cohort-unit intervals in `review_fixes/` (n = 8 cohorts), not the pooled 40-cell intervals, which treat masking rates within a cohort as independent. With the cohort as the unit, the graph's extra AUC drop holds at 3 of 5 masking rates (−0.0160 [−0.0204, −0.0115] at 50%), but the macro-F1 and balanced-accuracy intervals cover zero at every rate. Describe the threshold-metric pattern as directional, not as a robustness advantage.
 10. **Group means:** state whether families or individual model pairs are weighted equally.
 
 ## E. Add to Limitations

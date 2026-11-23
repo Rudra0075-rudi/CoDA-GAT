@@ -4,7 +4,7 @@ This is a retrospective audit of the archived study (`Archive.zip`, which is byt
 
 - **Not done:** no model was trained or retrained, no hyperparameter or dataset changed, and no new experimental comparison was added.
 - **Not preregistered:** none of these corrections were preregistered. `preregistration_b6.*` and every `PREREG.txt` are unchanged.
-- **Not overwritten:** every historical output directory is untouched. The run hashes 8,121 tracked files before and after, and fails if any of them changed.
+- **Not overwritten:** every historical output directory is untouched. The run hashes every tracked file outside `scripts/` before and after, and fails if any of them changed.
 
 | File | Contents |
 |---|---|
