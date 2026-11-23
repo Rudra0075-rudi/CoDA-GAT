@@ -20,6 +20,7 @@ degenerate `aps_*` columns in `results_b7/master_results.csv`.
 - **caption**: Biopsy label precision per cohort: samples with an exact fibrosis stage versus samples whose stage is only known as a grouped range.
 
 ## fig04_all_models_auc_ranked
+- **moved to `superseded/`**: not used in the paper (ceiling band); see `superseded/README.md`
 - **files**: `fig04_all_models_auc_ranked.png`, `fig04_all_models_auc_ranked.pdf`
 - **sources**: `results_b7/master_results.csv`, `baselines/per_sample_predictions/`, `baselines/*/all_folds.csv`
 - **caption**: Every model ranked by mean cross-cohort AUC. Baseline values are recomputed from the saved per-sample predictions over all 8 held-out cohorts; models for which only one cohort was ever evaluated are hatched and daggered and are never averaged in with the 8-cohort means. Shaded band is the 0.87-0.90 label-noise ceiling.
@@ -110,6 +111,7 @@ degenerate `aps_*` columns in `results_b7/master_results.csv`.
 - **caption**: Test A: recorded stage of samples the detector flags versus those it does not, as proportions; flags concentrate next to the F2 decision boundary.
 
 ## fig22_testB_operating_curve
+- **moved to `superseded/`**: not used in the paper (Test B cannot be recomputed); see `superseded/README.md`
 - **files**: `fig22_testB_operating_curve.png`, `fig22_testB_operating_curve.pdf`
 - **sources**: `test_b_rate/threshold_sweep_extended.csv`
 - **caption**: Test B operating curve: how the boundary-adjacency enrichment holds as the flagging rate rises, with the independently predicted 18.6% label-error rate marked.
