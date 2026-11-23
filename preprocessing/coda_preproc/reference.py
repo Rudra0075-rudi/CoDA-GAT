@@ -78,3 +78,42 @@ def describe_variant(score, meta):
     return dict(rho=rho, p_rho=p, kruskal_p=kruskal(*grp).pvalue,
                 **{f"mean_{s}": float(ex.loc[ex.stage == s, "dev"].mean())
                    for s in ["F0", "F1", "F2", "F3", "F4"]})
+
+
+HEAD3_ARMS = {
+    "off": dict(enabled=False, variant=None, a2=0.0),
+    "directional": dict(enabled=True, variant="directional", a2=0.3),
+    "directional_ps": dict(enabled=True, variant="directional_ps", a2=0.3),
+}
+
+
+def _readout(score, info):
+    """Cell 27b evaluate(), restricted to the four values Cell 31 keeps."""
+    d = info.assign(dev=score.loc[info.index])
+    ex = d[d.resolution.isin([RES_EXACT, "exact_ishak_mapped"]) & d.stage.notna()]
+    rho, prho = spearmanr(ex.stage.str[1].astype(float), ex.dev)
+    m = {s: float(ex.loc[ex.stage == s, "dev"].mean()) for s in ["F0", "F4"]}
+    pooled = ex.dev.std() + 1e-12
+    bw = d.groupby("cohort").dev.mean().std()
+    wi = d.groupby("cohort").dev.std().mean()
+    return dict(rho=float(rho), p_rho=float(prho),
+                f4_minus_f0_sd=float((m["F4"] - m["F0"]) / pooled), cohort_ratio=float(bw / wi))
+
+
+def head3_config(dev_targets, meta):
+    """Head-3 decision record (Cell 31, config/head3.json), read out on T1 samples.
+
+    Exploratory: it uses stage labels from every T1 cohort. Nothing is selected by it.
+    """
+    info = meta.loc[dev_targets.index]
+    info = info[info.tier == "T1"]
+    readout = {name: _readout(dev_targets[cfg["variant"]], info)
+               for name, cfg in HEAD3_ARMS.items() if cfg["variant"]}
+    return dict(
+        arms=HEAD3_ARMS, default_arm="directional", decision="deferred_to_ablation_row_B",
+        rationale=("Gate criterion f0_vs_healthy is unsound: control samples in "
+                   "GSE48452 (bariatric surgery), GSE89632 (obesity-matched) and "
+                   "GSE162694 (normal-histology NAFLD) are not healthy donor liver. "
+                   "Head 3 is therefore selected empirically via held-out coverage, "
+                   "not by a preprocessing gate."),
+        t1_readout=readout)

@@ -15,33 +15,36 @@ GTEx v8, STRING v12.0) and checks it against the deposited matrices (the 5 Aug 2
 Run the notebook from this folder (`cd preprocessing`). Set `CODAGAT_ROOT` to a working folder
 with about 10 GB free; downloads and outputs go there, not into the repository.
 
-## Re-run from GEO (23 Nov 2026)
+## Re-run from GEO, end to end (23 Nov 2026)
 
-`preprocessing_clean.ipynb` was run top to bottom from GEO in a fresh working folder, through
-integration, and compared with the deposited matrices:
+`preprocessing_clean.ipynb` was run from GEO in a fresh working folder, then through all of Part 2,
+and every one of the 94 deposited data files was compared with the rebuilt one:
 
-| Output | Re-run vs deposit |
+| Files | Result |
 |---|---|
-| Genes | 10,735, same order |
-| Samples | 1,366 supervised + 148 controls, same IDs |
-| ComBat matrix (`bulk_expression.parquet`) | max abs diff 5.2e-6 |
-| No-ComBat matrix (`bulk_expression_nocombat.parquet`) | max abs diff 1.5e-6 (GSE240729 only; the other cohorts are identical) |
-| Controls (`healthy_reference.parquet`) | max abs diff 5.7e-8 |
+| `fold_info.json` (8), `y.csv` and `sample_ids.csv` (48), `panel_genes.csv`, `graph_edges.csv`, `graph_topology.csv`, `feature_schema_AB.csv`, `feature_schema_C.csv`, `fold_assignment_lodo.csv`, `fold_sample_splits.csv`, `tensor_sample_order.csv` | Byte-identical (64 files) |
+| `labels.parquet` | Identical values (parquet metadata differs) |
+| `X.npy` tensors (24) | Same shapes and sample order; max abs diff 6.0e-6 (float32) |
+| `bulk_expression.parquet` (ComBat) | 10,735 genes, same order and samples; max abs diff 5.1e-6 |
+| `bulk_expression_nocombat.parquet` | max abs diff 1.5e-6 (GSE240729 only) |
+| `healthy_reference.parquet` (148 controls) | max abs diff 5.6e-8 |
+| `deviation_targets.parquet` | max abs diff 1.3e-6 |
+| `handoff.json` | Same fields; differs only in the `generated` timestamp and in the last digit of the Head-3 readout floats |
 
-The small differences are floating-point noise from package versions (here: GEOparse 2.0.4,
-mygene 3.2.2, inmoose 0.9.1; the August versions were not recorded).
+The small numeric differences are floating-point noise from package versions (here: GEOparse
+2.0.4, mygene 3.2.2, inmoose 0.9.1; the August versions were not recorded).
 
-**The five-gene rename map is required.** HGNC has renamed five genes since August
-(C12orf54 → LYLDT1, IPP → KLHL27, TBRG1 → FYRD1, TBRG4 → FASTKD4, TMEM19 → FAABTP).
-MyGene.info now returns the new names for the five cohorts mapped through it, while the seven
-cohorts whose platform files carry symbols keep the old names, so without the map the shared
-gene set drops to 10,730. `coda_preproc/symbols.py` maps the new names back before integration.
-Identifier services can change again, so the deposited matrices remain the data of record for
-every reported result.
-
-Not re-run here: the STRING download in Part 2 (this environment's network blocks
-stringdb-downloads.org). The STRING graph, panel and feature files were checked instead with
-`verify_against_archive.py`, below.
+Two caveats:
+- **STRING.** This environment's network blocks stringdb-downloads.org, so the STRING files were
+  synthesised from the deposited edge list (plus below-threshold and off-panel decoy links).
+  That checks the graph-building code, not STRING's content. In Colab the notebook downloads
+  STRING v12.0 itself.
+- **The five-gene rename map is required.** HGNC has renamed five genes since August
+  (C12orf54 → LYLDT1, IPP → KLHL27, TBRG1 → FYRD1, TBRG4 → FASTKD4, TMEM19 → FAABTP).
+  MyGene.info now returns the new names for the five cohorts mapped through it, while the seven
+  cohorts whose platform files carry symbols keep the old names, so without the map the shared
+  gene set drops to 10,730. `coda_preproc/symbols.py` maps the new names back before integration.
+  Identifier services can change again, so the deposited matrices remain the data of record.
 
 ## Downstream check against the deposit
 
