@@ -15,20 +15,26 @@ uncertainty and a cohort adversary for batch invariance.
 
 This repository contains the complete experimental record: every
 script, every saved run and every analysis output, including the results that did not go
-our way. The preprocessed dataset is on Google Drive (see Data). The negative findings are in here on purpose. A reader who can only find the
+our way. The processed dataset is deposited separately (see Data). The negative findings are in here on purpose. A reader who can only find the
 favourable half of a study has no reason to believe the favourable half.
 
 ## Headline results
 
-All values are means over the **8 held-out cohorts** (5 training seeds each), read from the
-files in this repository.
+AUROC averaged over the **8 held-out cohorts**; ± is the between-cohort SD (ddof=1). GAT
+rows average 5 training seeds per cohort; the baselines were run once (single seed), so
+compare the means, not the spreads. Source: `corrections_2026-11/outputs/aggregation/summary.txt`.
 
-| Model | Cross-cohort AUC |
+| Model | Cross-cohort AUROC |
 |---|---|
-| Best tabular baseline (`panel72_*__catboost`) | **0.842 ± 0.047** |
-| CoDA-GAT (primary configuration: adversary off, m=0) | **0.822 ± 0.030** |
-| Empty graph (same network, no edges) | 0.827 ± 0.044 |
-| Shuffled STRING graph | 0.829 ± 0.050 |
+| Best tabular baseline (`panel72_full__catboost`, single seed) | **0.842 ± 0.044** |
+| CoDA-GAT, primary configuration (adversary off, m=0), mean per seed | **0.822 ± 0.027** |
+| CoDA-GAT, same, five-seed ensemble | 0.830 ± 0.029 |
+| Empty graph (same network, no edges), mean per seed | 0.827 ± 0.044 |
+| Shuffled STRING graph, mean per seed | 0.829 ± 0.045 |
+
+`panel72_combined__catboost` ties at 0.842 (SD 0.049). Earlier versions of this README gave
+0.842 ± 0.047 and 0.822 ± 0.030: the first SD is not reproducible from the saved
+predictions, and the second is the SD over 40 runs, not between cohorts.
 
 Three things follow, and we state them plainly:
 
@@ -61,36 +67,29 @@ Node features are a (72 genes × 26 features) tensor per sample: 8 dynamic + 9 s
 
 Each fold's calibration set is a **single separate cohort**, never a random split — coverage must still be evaluated empirically under cohort shift; using a separate cohort does not itself establish exchangeability or a coverage guarantee.
 
-See `README.txt` for the dataset layout and loading instructions, and
-`FLAT_VIEW_WARNING.txt` for why the top-level `train/`, `calibration/` and `test/` folders
-must not be used for the LODO protocol.
-
-**The dataset is not stored in this repository.** Download `Archive.zip` (336,386,271 bytes,
-MD5 `60e281bbb499152b2f9c756d56ad5a0e`,
-SHA-256 `d869afaa4e40cf55b515a323a15588828c5a449488e6178e711dce06a68012a7`) from
-[Google Drive](https://drive.google.com/file/d/1fhzXBUcLJjSVRjvHdaVMO9Az15mGOZu9/view?usp=drive_link)
-and extract only the data folders into the repository root:
+**The dataset is not stored in this repository.** It is deposited on Zenodo as
+`Archive_RSOS.zip` (DOI: **ZENODO_DATA_DOI_TBD**): `shared/` (expression matrices, the 148
+controls, labels, graph, panel) and the 8 LODO folds (`train/`, `calibration/`, `test/` tensors
+and `fold_info.json`), 94 files, each byte-identical to the archived 5 Aug 2026 handoff, with
+SHA-256 checksums and a README describing the layout. To restore the inputs every script reads:
 
 ```bash
-unzip -n Archive.zip 'shared/*' 'folds/*' 'train/*' 'calibration/*' 'test/*' \
-  'nanostring/raw/*' 'nanostring/rcc/*' 'nanostring/interim/*' 'nanostring/processed/*' -x '*.DS_Store'
+unzip Archive_RSOS.zip
+cp -R CoDA-GAT_data/shared CoDA-GAT_data/folds .   # merges into folds/; no file overlaps git
 ```
 
-Do not unzip the whole archive over the repository: it also holds older copies of `README.md` and
-eight scripts, which would overwrite the current ones. The command above restores `shared/`, the per-fold `train/`, `calibration/`
-and `test/` splits and `fold_info.json` in `folds/`, the top-level `train/`, `calibration/` and
-`test/` copy, and `nanostring/{raw,rcc,interim,processed}/`: the inputs every script reads.
-The fold-0 model outputs in `folds/fold0_GSE130970/outputs*/` stay in git. These 444
-files were removed from git on 22 Nov 2026; each was SHA-256 identical to its copy in the archive.
-`preprocessing/` rebuilds and checks the downstream inputs (see `preprocessing/README.md`).
+The fold-0 model outputs in `folds/fold0_GSE130970/outputs*/` stay in git. The data files were
+removed from git on 22 Nov 2026; each was SHA-256 identical to its archived copy.
+`preprocessing/` rebuilds the dataset from public GEO data (see `preprocessing/README.md`).
 
 ## Layout
 
 ```
 scripts/              training and analysis scripts (see below)
-shared/               graph, gene panel, labels, expression matrices  [in Archive.zip]
-folds/foldN_GSE*/     the LODO protocol: train/ calibration/ test/  [in Archive.zip]
-preprocessing/        cleaned preprocessing code + check against the archive
+shared/               graph, gene panel, labels, expression matrices  [Zenodo deposit]
+folds/foldN_GSE*/     the LODO protocol: train/ calibration/ test/  [Zenodo deposit]
+preprocessing/        preprocessing from GEO + check against the archive
+corrections_2026-11/  analysis-only corrections to the reported numbers (no training)
 results_b7/           the main 120-run experiment (8 folds x 3 modes x 5 seeds)
 results_b7_m{1,3}/    augmentation-ratio arms
 baselines/            tabular, hybrid and graph-control baselines
@@ -102,17 +101,33 @@ safety_checks_b5/     the gate that had to pass before the main experiment ran
 verification_checks/  APS conformal bug diagnosis + attention kill test
 test_a/b/c            adjacency, rate-consistency and label-cleaning experiments
 consensus_failures/   do 23 models fail on the same samples?
-figures/              26 publication figures + diagnosis.txt
+figures/              publication figures + diagnosis.txt (superseded/ = not used in the paper)
 preregistration_b6.*  hypotheses and analysis plan, locked before B7 ran
 ```
 
 ## Reproducing
 
-Order matters; later blocks import from earlier ones.
+Set up the environment once:
 
 ```bash
-conda activate dagat
+conda env create -f environment.yml
+conda activate coda-gat
+```
 
+**Check the reported numbers without training (minutes).** This recomputes every corrected
+number in the paper from the saved predictions and cannot launch training:
+
+```bash
+corrections_2026-11/run_analysis_only.sh
+```
+
+**Rebuild the dataset from GEO (hours).** Run `preprocessing/preprocessing_clean.ipynb` from
+`preprocessing/`, or check the downstream steps against the deposit with
+`preprocessing/verify_against_archive.py` (see `preprocessing/README.md`).
+
+**Re-run the experiments (days on one GPU).** Order matters; later blocks import from earlier ones.
+
+```bash
 python scripts/train_fold0_b1.py          # model + one fold, proof of life
 python scripts/baselines_b3.py            # baselines
 python scripts/safety_checks_b5.py        # GATE: must pass before B7
@@ -122,7 +137,7 @@ python scripts/ablations_b9.py
 python scripts/graph_utility.py
 python scripts/learned_graph.py
 python scripts/verification_checks.py
-python scripts/make_figures.py            # 26 figures
+python scripts/make_figures.py            # figures
 python scripts/fix_figures.py             # diagnosis + corrected figs 4,5,11-14
 ```
 
@@ -145,11 +160,27 @@ python scripts/fix_figures.py             # diagnosis + corrected figs 4,5,11-14
 - **Cross-fold statements are underpowered at n=8** and are descriptive, not confirmatory.
   Sample-level analyses must also account for dependence within cohorts; a larger patient count alone does not establish adequate power.
 
+## Not reported in the paper, and why
+
+These outputs stay in the repository as part of the record, but the paper does not report them.
+
+| Item | Where | Why |
+|---|---|---|
+| CORN ordinal head and its stage error | `h2_decision/` | The decoder had an error and the test logits and checkpoints were not saved (`corrections_2026-11/UNRESOLVED.md`, item 1). |
+| "Ablation Q" | none | No script, output or file exists. |
+| m=7 augmentation arm, `directional_ps` deviation target | none | Planned or configured, never run. Listed as deviations from the analysis plan. |
+| Test B rate sweep and fig22 | `test_b_rate/`, `figures/superseded/` | Pools not saved, dropout not seeded (item 6). |
+| Flagging v4 task-1 stage metrics | `flagging_v4/` | Used grouped stage codes; would need new inference (item 7). |
+| "Label-noise ceiling" band in fig04 | `figures/superseded/` | An assumption-based sensitivity range, not a measurement. |
+| Label-cleaning experiment (+0.016 macro-F1, p = 0.31) | `test_c_cleaning/` | Not significant; supplement as a null at most. |
+| NanoString external data (GSE163211) | `nanostring` (not deposited) | Not a test of the F2+ endpoint. |
+
 ## Licence and data provenance
 
-All expression data derives from public GEO accessions (GSE130970, GSE135251, GSE162694,
-GSE193066, GSE213621, GSE240729, GSE31803, GSE84044, and others). Please cite the original
-studies for the data. The code in `scripts/` is released for academic use.
+Code: MIT (`LICENSE`). Processed data deposit: CC BY 4.0. All expression data derive from
+public GEO series: GSE130970, GSE135251, GSE162694, GSE193066, GSE207310, GSE213621, GSE240729,
+GSE276114, GSE31803, GSE48452, GSE84044 and GSE89632. References: GTEx v8 (liver) and STRING
+v12.0. Please cite the original studies for the data. Software DOI: **ZENODO_SOFTWARE_DOI_TBD**.
 
 ## Project context
 

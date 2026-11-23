@@ -749,7 +749,7 @@ def main():
         results[cond]["cleanlab"] = cc
         if not cc["available"]:
             say(f"    NOT AVAILABLE -- {cc['reason']}")
-            say("    Install with:  /opt/anaconda3/envs/dagat/bin/pip install cleanlab")
+            say("    Install with:  pip install cleanlab")
             say("    then re-run. The primary result above does not depend on it.")
         else:
             say(f"    cleanlab {cc['version']}: {cc['n_issues']} issues ({cc['rate']:.2%})")
