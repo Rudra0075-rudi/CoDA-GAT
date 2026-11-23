@@ -4,3 +4,6 @@
 # Python bytecode -- regenerated on import, never source
 __pycache__/
 *.py[cod]
+
+# CatBoost writes training logs here on every run
+catboost_info/

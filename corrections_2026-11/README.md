@@ -21,7 +21,7 @@ This is a retrospective audit of the archived study (`Archive.zip`, which is byt
 ```bash
 corrections_2026-11/run_analysis_only.sh
 # optional: CORAL_PYTORCH_PATH=<dir containing coral_pytorch>  to check CORN against the installed package
-# optional: PYTHON=<interpreter>   (default /opt/anaconda3/envs/dagat/bin/python)
+# optional: PYTHON=<interpreter>   (default: python3 on PATH)
 ```
 
 **Why it cannot train.** `analysis/guard.py` is installed before any analysis import. It makes these unimportable:

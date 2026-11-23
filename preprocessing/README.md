@@ -1,46 +1,64 @@
-# CoDA-GAT preprocessing: cleaned code and verification
+# CoDA-GAT preprocessing
 
-Re-verified on 22 Nov 2026: `verify_against_archive.py` again passes 36/36 checks against `Archive.zip` (5 Aug 2026 handoff) with GTEx v8 downloaded fresh. In this repository, the 5 `shared/*.parquet` matrices (stored in Git LFS) have the same SHA-256 as the archive, and the other 9 files in `shared/` and all 98 files in `folds/` are byte-identical to it. The 7 NanoString parquet files in LFS also match the archive. To run the check on a clone, restore the data folders with the `unzip` command in the top-level README first.
-
-This folder holds a cleaned version of `preprocessing.ipynb`, as supplied on 21 Nov 2026. The original notebook is not modified.
+This folder rebuilds the processed dataset from public data (GEO, ArrayExpress/BioStudies,
+GTEx v8, STRING v12.0) and checks it against the deposited matrices (the 5 Aug 2026 archive).
 
 | File | What it is |
 |---|---|
-| `coda_preproc/` | Every stage from batch integration onwards, as a package of about 600 lines. In the notebook these stages took about 2,700 lines. |
-| `preprocessing_clean.ipynb` | Part 1 is the original acquisition, label and expression-loading cells, minus dead cells. Part 2 calls `coda_preproc`. All outputs are cleared. |
-| `verify_against_archive.py` | Rebuilds the downstream outputs from the archived inputs and compares them with the archived handoff. |
+| `preprocessing_clean.ipynb` | Part 1: the acquisition, label and per-cohort expression code of the 30 Aug 2026 notebook, the revision that produced the archive. Part 2: calls `coda_preproc`. Outputs cleared. |
+| `coda_preproc/` | Every stage from batch integration onwards (integration, GTEx reference, panel and graph, 26 node features, folds, export), plus `symbols.py`, the five-gene rename map. |
+| `verify_against_archive.py` | Rebuilds the downstream outputs from the deposited inputs and compares them with the deposit. |
 | `verification_report.csv` | The result of that comparison: 36/36 checks pass. |
-| `NOTEBOOK_CLEANUP.md` | Cell by cell: what was kept, removed or moved, and why. |
+| `NOTEBOOK_CLEANUP.md` | Cell by cell: what was kept, moved or removed from the August notebook, and why. |
+| `original/` | The October 2026 notebook as supplied, unchanged. It does not reproduce the deposit (10,732 genes); see `original/README.md`. |
 
-## What was verified, and how
+Run the notebook from this folder (`cd preprocessing`). Set `CODAGAT_ROOT` to a working folder
+with about 10 GB free; downloads and outputs go there, not into the repository.
 
-I ran `verify_against_archive.py` against `Archive.zip` and the public GTEx v8 files. It starts from the archived inputs:
-- the ComBat matrix (`shared/bulk_expression.parquet`);
-- the 148 GEO controls;
-- the labels;
-- the archived STRING edge list.
+## Re-run from GEO (23 Nov 2026)
 
-From those it rebuilds the rest with the cleaned code and compares each result with the archive.
+`preprocessing_clean.ipynb` was run top to bottom from GEO in a fresh working folder, through
+integration, and compared with the deposited matrices:
+
+| Output | Re-run vs deposit |
+|---|---|
+| Genes | 10,735, same order |
+| Samples | 1,366 supervised + 148 controls, same IDs |
+| ComBat matrix (`bulk_expression.parquet`) | max abs diff 5.2e-6 |
+| No-ComBat matrix (`bulk_expression_nocombat.parquet`) | max abs diff 1.5e-6 (GSE240729 only; the other cohorts are identical) |
+| Controls (`healthy_reference.parquet`) | max abs diff 5.7e-8 |
+
+The small differences are floating-point noise from package versions (here: GEOparse 2.0.4,
+mygene 3.2.2, inmoose 0.9.1; the August versions were not recorded).
+
+**The five-gene rename map is required.** HGNC has renamed five genes since August
+(C12orf54 → LYLDT1, IPP → KLHL27, TBRG1 → FYRD1, TBRG4 → FASTKD4, TMEM19 → FAABTP).
+MyGene.info now returns the new names for the five cohorts mapped through it, while the seven
+cohorts whose platform files carry symbols keep the old names, so without the map the shared
+gene set drops to 10,730. `coda_preproc/symbols.py` maps the new names back before integration.
+Identifier services can change again, so the deposited matrices remain the data of record for
+every reported result.
+
+Not re-run here: the STRING download in Part 2 (this environment's network blocks
+stringdb-downloads.org). The STRING graph, panel and feature files were checked instead with
+`verify_against_archive.py`, below.
+
+## Downstream check against the deposit
+
+`verify_against_archive.py` starts from the deposited ComBat matrix, the 148 controls, the
+labels and the STRING edge list, rebuilds the rest with `coda_preproc`, and compares:
 
 | Output | Result |
 |---|---|
-| GTEx liver reference | 226 samples, as claimed. 10,734 genes are shared with the expression matrix (GCOM1 is missing from GTEx). |
-| Deviation targets: `deviation_score` (= `directional`) and `raw` | Identical (max \|diff\| 6e-17). |
+| GTEx liver reference | 226 samples. 10,734 genes are shared with the expression matrix (GCOM1 is missing from GTEx). |
+| Deviation targets: `deviation_score` (= `directional`) and `raw` | Identical (max abs diff 6e-17). |
 | 72-gene panel and its order | Identical. |
-| Graph topology recomputed from the edge list | Identical. The graph has 321 undirected pairs. |
+| Graph topology from the edge list | Identical; 321 undirected pairs. |
 | Fold membership (train / calibration / test, all 8 folds) | Identical. |
-| All 26 node features, every split of every fold | Identical (max \|diff\| 6e-8). |
+| All 26 node features, every split of every fold | Identical (max abs diff 6e-8). |
 
-`graph_edges.csv`, `graph_topology.csv`, `panel_genes.csv` and `feature_schema_AB.csv` produced by the notebook run also have the same SHA-256 as the archived files. That confirms STRING v12.0 at a score of 700 or more.
-
-## What could not be verified here, and why
-
-- **Per-cohort loading, identifier mapping and ComBat.** These need GEO, BioStudies and MyGene.info, which this environment cannot reach. The archive also does not hold the per-cohort matrices.
-- **The notebook does not reproduce the archived matrices.** The supplied notebook run (Colab, 8 Oct 2026) differs from the archived package (5 Aug 2026) in three ways:
-  1. It produced 10,732 common genes; the archive has 10,735. The likely cause is MyGene.info symbol mapping changing between the two runs.
-  2. GSE240729 was loaded differently. Its no-ComBat median is 4.17 in the notebook run and 4.62 in the archive.
-  3. Group C Cohen's d was edited after the archive was made, from per-class variances with ddof=0 to ddof=1. `folds.COHENS_D_MODE = "archive"` keeps the original formula.
-- **Status of the first two (22 Nov 2026).** The August notebook revision that produced the archive no longer exists, so the upstream difference cannot be closed. All reported results were trained on the archived matrices, which are deposited unchanged (see the Drive link in the top-level README). Describe this notebook in the paper as: "Preprocessing code is provided as a later revision of the original notebook. It reproduces every downstream input to model training exactly from the archived processed matrices; its upstream steps depend on live identifier-mapping services and do not reproduce the archived matrices exactly (10,732 vs 10,735 genes). The archived matrices used for all reported results are deposited."
+Group C Cohen's d uses the archive formula (per-class variance with ddof=0, pooled with n−1
+weights): `folds.COHENS_D_MODE = "archive"`.
 
 ## Behaviour that is kept, but must be described in Methods
 
@@ -51,12 +69,13 @@ From those it rebuilds the rest with the cleaned code and compares each result w
 - The deviation variants were explored using stage labels from all cohorts. The default target, `directional`, is the variant that *failed* the gate, so it was not selected by that gate.
 - `pw_*` features are leave-one-out pathway means. Masking a gene therefore leaves its signal inside its neighbours' `pw_*` features.
 
-## Run
+## Run the downstream check
 
 ```bash
-python -I verify_against_archive.py --archive <unzipped Archive.zip> \
+python verify_against_archive.py --archive <unzipped Archive_RSOS.zip>/CoDA-GAT_data \
   --gtex-tpm GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz \
   --gtex-attr GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
 ```
 
-The script needs numpy, pandas, scipy, scikit-learn, networkx and pyarrow. `integrate.py` also needs inmoose. Expect about 5 minutes, most of it spent reading the 1.6 GB GTEx file.
+It needs numpy, pandas, scipy, scikit-learn, networkx and pyarrow (`environment.yml`). Expect
+about 5 minutes, most of it reading the 1.6 GB GTEx file.
