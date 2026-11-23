@@ -14,3 +14,7 @@ folds/*/train/
 folds/*/calibration/
 folds/*/test/
 folds/*/fold_info.json
+
+# The Zenodo download and its unzipped folder (README, Data): never commit them
+Archive_RSOS.zip
+CoDA-GAT_data/

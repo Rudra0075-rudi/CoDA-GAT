@@ -13,7 +13,7 @@ channels:
 dependencies:
   - python=3.11
   - numpy
-  - pandas
+  - pandas=3.0.3     # 3.1 changed CSV float parsing; the analysis-only check needs 3.0.x
   - scipy
   - scikit-learn
   - matplotlib
@@ -28,6 +28,7 @@ dependencies:
   - pip
   - pip:
       - torch_geometric
+      - boruta           # scripts/baselines_b3.py (BorutaPy)
       - GEOparse
       - mygene
       - inmoose
