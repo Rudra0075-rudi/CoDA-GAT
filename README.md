@@ -81,7 +81,7 @@ Each fold's calibration set is a **single separate cohort**, never a random spli
 ("Dataset for: Can gene networks help detect significant liver fibrosis? Graph attention and
 tabular models tested on unseen patient cohorts"): `shared/` (expression matrices, the 148
 controls, labels, graph, panel) and the 8 LODO folds (`train/`, `calibration/`, `test/` tensors
-and `fold_info.json`), 94 files, each byte-identical to the archived 5 Aug 2026 handoff, with
+and `fold_info.json`), 94 files, each byte-identical to the archived dataset the models were trained on, with
 SHA-256 checksums and a README describing the layout. To restore the inputs every script reads:
 
 ```bash
@@ -90,7 +90,7 @@ cp -R CoDA-GAT_data/shared CoDA-GAT_data/folds .   # merges into folds/; no file
 ```
 
 The fold-0 model outputs in `folds/fold0_GSE130970/outputs*/` stay in git. The data files were
-removed from git on 22 Nov 2026; each was SHA-256 identical to its archived copy.
+removed from git; each was SHA-256 identical to its archived copy.
 `preprocessing/` rebuilds the dataset from public GEO data (see `preprocessing/README.md`).
 
 ## Layout

@@ -1,7 +1,7 @@
 """Stage 10: write the handoff package the training scripts read
 (notebook Cells 32, 33 and 34).
 
-Writes every file of the archived package (5 Aug 2026): shared/ (14 files)
+Writes every file of the archived package: shared/ (14 files)
 and, per fold, train/ calibration/ test/ (X.npy, y.csv, sample_ids.csv)
 plus fold_info.json. Archive-compatible by default: the same file names,
 columns and JSON fields. Not written: the flat top-level copy of fold 0

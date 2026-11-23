@@ -1,6 +1,6 @@
 """Map current HGNC symbols back to the names used in the archived matrices.
 
-The archived matrices (5 Aug 2026) were built when MyGene.info still returned
+The archived matrices were built when MyGene.info still returned
 the five old symbols below. HGNC has since renamed these genes. A re-run today
 gets the new names for cohorts whose identifiers are mapped through
 MyGene.info (GSE130970, GSE135251, GSE162694, GSE207310, GSE240729), while

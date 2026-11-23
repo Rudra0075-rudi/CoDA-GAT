@@ -1,11 +1,11 @@
 # Conda environment for CoDA-GAT: training, analysis and preprocessing.
 #   conda env create -f environment.yml && conda activate coda-gat
 #
-# Package versions used for the original training runs (Aug-Sep 2026) were
-# not recorded, so versions are not pinned here. Known versions:
+# Package versions used for the original training runs were not recorded,
+# so most versions are not pinned here. Known versions:
 #   - corrections_2026-11 analysis: Python 3.11.15, pandas 3.0.3
 #     (corrections_2026-11/outputs/VALIDATION.md)
-#   - preprocessing re-run from GEO, Nov 2026: GEOparse 2.0.4, mygene 3.2.2,
+#   - preprocessing re-run from GEO: GEOparse 2.0.4, mygene 3.2.2,
 #     inmoose 0.9.1 (preprocessing/README.md)
 name: coda-gat
 channels:

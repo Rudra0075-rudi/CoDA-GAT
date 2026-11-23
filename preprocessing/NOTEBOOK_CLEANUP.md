@@ -1,12 +1,12 @@
-# How `preprocessing_clean.ipynb` was built from the 30 Aug 2026 notebook
+# How `preprocessing_clean.ipynb` was built from the recovered notebook
 
-Source: `CoDAGAT_preprocessing_notebook_2026-08-30.ipynb`. It post-dates the archived matrices
-(5 Aug 2026 handoff), so it is not the exact run that made them; re-run from GEO it reproduces them. Labels such as [CELL 15] are the notebook's own cell
+Source: the recovered CoDA-GAT preprocessing notebook. It is not known to be the exact run that made the
+deposited matrices, but re-run from GEO it reproduces them. Labels such as [CELL 15] are the notebook's own cell
 titles. The processing logic of every kept cell is unchanged; the edits are listed in full.
 
 ## Part 1: kept, in this order
 
-| Clean notebook | August cell | Edit |
+| Clean notebook | Original cell | Edit |
 |---|---|---|
 | CELL 1 | [CELL 1] environment check | `!pip install` lines removed; packages come from `environment.yml`. |
 | CELL 2 | [CELL 2] imports, paths, config | Colab Drive mount removed. `ROOT` is `$CODAGAT_ROOT`, default `./CoDAGAT_work`. |
@@ -20,7 +20,7 @@ titles. The processing logic of every kept cell is unchanged; the edits are list
 
 ## Part 1: removed
 
-| August cell | Why |
+| Original cell | Why |
 |---|---|
 | Markdown cells 0, 1 | Stray text. |
 | [CELL 16] positional ID check v1 | Read-only, and superseded by [CELL 18] v2. |
@@ -30,9 +30,9 @@ titles. The processing logic of every kept cell is unchanged; the edits are list
 
 ## Part 2: `coda_preproc`
 
-| Step | August cells | Replacement |
+| Step | Original cells | Replacement |
 |---|---|---|
-| Symbol renames | — | `symbols.apply_to_all`: maps five genes renamed by HGNC since August back to the archived names (see `symbols.py`). |
+| Symbol renames | — | `symbols.apply_to_all`: maps five genes renamed by HGNC since the archive was built back to the archived names (see `symbols.py`). |
 | Integration | [CELL 25], [CELL 26] | `integrate.integrate_all`, `integrate.split_supervised`, `integrate.uncorrected_like` |
 | GTEx and deviation | [CELL 27, 27b, 28] | `reference.*`. The gate table is exploratory and uses labels from every cohort. |
 | Panel and STRING | [CELL 29] | `graph.select_panel`, `graph.string_subgraph` |
@@ -47,4 +47,4 @@ titles. The processing logic of every kept cell is unchanged; the edits are list
 The label parser is built up in steps ([CELL 7] v1, [CELL 10] v3, [CELL 12] v3.1 patch; [CELL 9]
 builds a table that [CELL 11] rebuilds), and the cohort repairs ([CELL 19], [CELL 22], [CELL 24])
 patch the loader output in place. Collapsing them would change what runs. They are kept as
-they ran in August, because that order is what reproduces the archive.
+they originally ran, because that order is what reproduces the archive.
