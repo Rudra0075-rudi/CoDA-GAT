@@ -68,7 +68,9 @@ Node features are a (72 genes × 26 features) tensor per sample: 8 dynamic + 9 s
 Each fold's calibration set is a **single separate cohort**, never a random split — coverage must still be evaluated empirically under cohort shift; using a separate cohort does not itself establish exchangeability or a coverage guarantee.
 
 **The dataset is not stored in this repository.** It is deposited on Zenodo as
-`Archive_RSOS.zip` (DOI: **ZENODO_DATA_DOI_TBD**): `shared/` (expression matrices, the 148
+`Archive_RSOS.zip`, DOI [10.5281/zenodo.24470811](https://doi.org/10.5281/zenodo.24470811)
+("Dataset for: Can gene networks help detect significant liver fibrosis? Graph attention and
+tabular models tested on unseen patient cohorts"): `shared/` (expression matrices, the 148
 controls, labels, graph, panel) and the 8 LODO folds (`train/`, `calibration/`, `test/` tensors
 and `fold_info.json`), 94 files, each byte-identical to the archived 5 Aug 2026 handoff, with
 SHA-256 checksums and a README describing the layout. To restore the inputs every script reads:
@@ -180,7 +182,8 @@ These outputs stay in the repository as part of the record, but the paper does n
 Code: MIT (`LICENSE`). Processed data deposit: CC BY 4.0. All expression data derive from
 public GEO series: GSE130970, GSE135251, GSE162694, GSE193066, GSE207310, GSE213621, GSE240729,
 GSE276114, GSE31803, GSE48452, GSE84044 and GSE89632. References: GTEx v8 (liver) and STRING
-v12.0. Please cite the original studies for the data. Software DOI: **ZENODO_SOFTWARE_DOI_TBD**.
+v12.0. Please cite the original studies for the data. Processed data: [10.5281/zenodo.24470811](https://doi.org/10.5281/zenodo.24470811).
+Software DOI: **ZENODO_SOFTWARE_DOI_TBD** (to be added once a GitHub release is archived on Zenodo).
 
 ## Project context
 
