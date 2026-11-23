@@ -324,7 +324,7 @@ def compare_augmentation_sweep(metric_cols=("auc", "macro_f1", "balanced_acc")):
             rows_by_m[m] = df[(df["mode"] == "off") & (df["m"] == m)]
         else:
             lines.append(f"  m={m}: NOT YET RUN -- run: "
-                        f"/opt/anaconda3/envs/dagat/bin/python scripts/run_full_experiment_b7.py --m {m} --modes off")
+                        f"python scripts/run_full_experiment_b7.py --m {m} --modes off")
 
     present_ms = sorted(rows_by_m.keys())
     if len(present_ms) < 2:

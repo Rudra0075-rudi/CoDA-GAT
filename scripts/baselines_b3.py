@@ -1052,7 +1052,13 @@ def main():
     expr_full = healthy_ref = None
     if want_tabular:
         expr_full = pd.read_parquet(SHARED_DIR / "bulk_expression.parquet")
-        healthy_ref = pd.read_parquet(SHARED_DIR / "geo_control_reference.parquet")
+        # As first committed (22 Sep 2026) this read shared/healthy_reference.parquet, the
+        # archived file. The 6 Oct 2026 commit switched to geo_control_reference.parquet,
+        # which only the later October export writes. Both hold the same 148 GEO controls.
+        _ref = SHARED_DIR / "healthy_reference.parquet"
+        if not _ref.exists():
+            _ref = SHARED_DIR / "geo_control_reference.parquet"
+        healthy_ref = pd.read_parquet(_ref)
 
     all_tabular, all_graph, all_hybrid, all_coverage = [], [], [], []
 

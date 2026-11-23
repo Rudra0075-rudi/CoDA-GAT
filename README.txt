@@ -1,3 +1,14 @@
+NOTE (23 Nov 2026): this is the dataset note written with the 5 Aug 2026
+archive, kept unchanged below for provenance (several scripts cite it).
+It is out of date in three ways:
+  - The data are not in this repository. Download the deposit described in
+    README.md (Data); its own README.md replaces this note.
+  - The flat train/ calibration/ test/ copy of fold 0 and external/
+    (NanoString) are not part of the deposit.
+  - "Conformal coverage guarantee" (binding rule 1): calibration and test are
+    different cohorts, so coverage is nominal, not guaranteed.
+------------------------------------------------------------------------
+
 CoDA-GAT PREPROCESSED DATASET
 generated 2026-08-05 14:58
 
