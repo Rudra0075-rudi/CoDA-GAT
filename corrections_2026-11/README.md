@@ -1,6 +1,6 @@
 # CoDA-GAT — 2026-11 retrospective corrections
 
-This is a retrospective audit of the archived study (`Archive.zip`, which is byte-identical to this working tree at commit `e06a055`). It fixes implementation and analysis errors using only saved outputs.
+This is a retrospective audit of the archived study (`Archive.zip`, which is byte-identical to this working tree at commit `e3c5c15`). It fixes implementation and analysis errors using only saved outputs.
 
 - **Not done:** no model was trained or retrained, no hyperparameter or dataset changed, and no new experimental comparison was added.
 - **Not preregistered:** none of these corrections were preregistered. `preregistration_b6.*` and every `PREREG.txt` are unchanged.
