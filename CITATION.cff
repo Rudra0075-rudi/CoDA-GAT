@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "Code for: Can gene networks help detect significant liver fibrosis? Graph attention and tabular models tested on unseen patient cohorts"
+version: "1.0.0"
+doi: 10.5281/zenodo.24490872
+license: MIT
+repository-code: "https://github.com/Rudra0075-rudi/CoDA-GAT"
+authors:
+  - family-names: Zaman
+    given-names: Samiha Binte
+    affiliation: BRAC University
+  - family-names: Soham
+    given-names: Rudrajoyti Maitra
+    affiliation: BRAC University
+  - family-names: Ghani
+    given-names: Ismaeel
+    affiliation: BRAC University
+  - family-names: Islam
+    given-names: Lubaina Afra
+    affiliation: BRAC University
+  - family-names: Ahmed Naahee
+    given-names: Samira
+    affiliation: BRAC University
+  - family-names: Chakrabarty
+    given-names: Amitabha
+    affiliation: BRAC University
+  - family-names: Aziz
+    given-names: Azwad
+    affiliation: BRAC University
+keywords:
+  - liver fibrosis
+  - transcriptomics
+  - graph attention network
+  - leave-one-dataset-out
+references:
+  - type: data
+    title: "Dataset for: Can gene networks help detect significant liver fibrosis? Graph attention and tabular models tested on unseen patient cohorts"
+    doi: 10.5281/zenodo.24470811
+    authors:
+      - name: "CoDA-GAT authors (BRAC University thesis team T25301033)"
