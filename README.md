@@ -209,7 +209,7 @@ Code: MIT (`LICENSE`). Processed data deposit: CC BY 4.0. All expression data de
 public GEO series: GSE130970, GSE135251, GSE162694, GSE193066, GSE207310, GSE213621, GSE240729,
 GSE276114, GSE31803, GSE48452, GSE84044 and GSE89632. References: GTEx v8 (liver) and STRING
 v12.0. Please cite the original studies for the data. Processed data: [10.5281/zenodo.24470811](https://doi.org/10.5281/zenodo.24470811).
-Software DOI: [10.5281/zenodo.24490872](https://doi.org/10.5281/zenodo.24490872). To cite this code, use `CITATION.cff`.
+Software DOI (version 1.1.0): [10.5281/zenodo.24522898](https://doi.org/10.5281/zenodo.24522898); version 1.0.0: [10.5281/zenodo.24490872](https://doi.org/10.5281/zenodo.24490872). To cite this code, use `CITATION.cff`.
 
 ## Project context
 
