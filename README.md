@@ -115,6 +115,8 @@ consensus_failures/   do 23 models fail on the same samples?
 figures/              publication figures + diagnosis.txt (superseded/ = not used in the paper)
 preregistration_b6.*  hypotheses and analysis plan, locked before B7 ran
 sensitivity_batch_correction/  tabular baselines with ComBat fitted without the held-out cohort
+paper_analyses/       analyses added for the journal paper, its result-figure code and
+                      methodology-figure sources; maps every reported result to its source
 ```
 
 ## Reproducing
@@ -134,6 +136,16 @@ number in the paper from the saved predictions and cannot launch training:
 
 ```bash
 corrections_2026-11/run_analysis_only.sh
+```
+
+**Recompute the analyses added for the journal paper and redraw its figures (minutes; the
+context-free experiment trains 160 small models, about 40 minutes on 4 CPU cores).**
+`paper_analyses/README.md` lists every result reported in the paper with the file it comes from.
+
+```bash
+bash paper_analyses/additional_analyses/run_all.sh
+bash paper_analyses/additional_analyses/run_ctx_free.sh
+python paper_analyses/result_figures/results_figures.py . paper_analyses/additional_analyses figures_out
 ```
 
 **Rebuild the dataset from GEO (hours).** Run `preprocessing/preprocessing_clean.ipynb` from
@@ -175,7 +187,7 @@ python scripts/fix_figures.py             # diagnosis + corrected figs 4,5,11-14
   cohort did not lower AUROC (leading CatBoost 0.843 against 0.841; see
   `sensitivity_batch_correction/`). CoDA-GAT was not refitted.
 - **The conformal APS implementation had a bug.** The randomization term was omitted, which
-  makes APS degenerate at K=2 classes: 19.4% of calibration scores are exactly 1.0, so the
+  makes APS degenerate at K=2 classes: 29.5% of calibration scores are exactly 1.0, so the
   quantile pins at 1.0 and every prediction set contains both classes. `verification_checks/`
   diagnoses it and supplies corrected values; the figures use the corrected numbers and show
   the original alongside. The LAC results were never affected.
@@ -194,13 +206,12 @@ These outputs stay in the repository as part of the record, but the paper does n
 
 | Item | Where | Why |
 |---|---|---|
-| CORN ordinal head and its stage error | `h2_decision/` | The decoder had an error and the test logits and checkpoints were not saved (`corrections_2026-11/UNRESOLVED.md`, item 1). |
+| CORN ordinal head: its stage error | `h2_decision/` | The decoder had an error and the test logits and checkpoints were not saved (`corrections_2026-11/UNRESOLVED.md`, item 1). The paper reports only the AUROC and macro-F1 with and without the head (five folds, `h2_decision/per_fold.csv`). |
 | "Ablation Q" | none | No script, output or file exists. |
 | m=7 augmentation arm, `directional_ps` deviation target | none | Planned or configured, never run. Listed as deviations from the analysis plan. |
-| Test B rate sweep and fig22 | `test_b_rate/`, `figures/superseded/` | Pools not saved, dropout not seeded (item 6). |
+| Test B rate sweep and fig22 | `test_b_rate/`, `figures/superseded/` | Pools not saved, dropout not seeded (item 6). The supplementary material shows the sweep as a historical record, not as evidence. |
 | Flagging v4 task-1 stage metrics | `flagging_v4/` | Used grouped stage codes; would need new inference (item 7). |
 | "Label-noise ceiling" band in fig04 | `figures/superseded/` | An assumption-based sensitivity range, not a measurement. |
-| Label-cleaning experiment (+0.016 macro-F1, p = 0.31) | `test_c_cleaning/` | Not significant; supplement as a null at most. |
 | NanoString external data (GSE163211) | `nanostring` (not deposited) | Not a test of the F2+ endpoint. |
 
 ## Licence and data provenance
@@ -209,7 +220,7 @@ Code: MIT (`LICENSE`). Processed data deposit: CC BY 4.0. All expression data de
 public GEO series: GSE130970, GSE135251, GSE162694, GSE193066, GSE207310, GSE213621, GSE240729,
 GSE276114, GSE31803, GSE48452, GSE84044 and GSE89632. References: GTEx v8 (liver) and STRING
 v12.0. Please cite the original studies for the data. Processed data: [10.5281/zenodo.24470811](https://doi.org/10.5281/zenodo.24470811).
-Software DOI (version 1.1.0): [10.5281/zenodo.24522898](https://doi.org/10.5281/zenodo.24522898); version 1.0.0: [10.5281/zenodo.24490872](https://doi.org/10.5281/zenodo.24490872). To cite this code, use `CITATION.cff`.
+Software DOI (version 1.2.0): [10.5281/zenodo.24550256](https://doi.org/10.5281/zenodo.24550256); version 1.1.0: [10.5281/zenodo.24522898](https://doi.org/10.5281/zenodo.24522898); version 1.0.0: [10.5281/zenodo.24490872](https://doi.org/10.5281/zenodo.24490872). To cite this code, use `CITATION.cff`.
 
 ## Project context
 

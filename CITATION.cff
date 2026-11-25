@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata from this file."
 type: software
 title: "Code for: Can gene networks help detect significant liver fibrosis? Graph attention and tabular models tested on unseen patient cohorts"
-version: "1.1.0"
-doi: 10.5281/zenodo.24522898
+version: "1.2.0"
+doi: 10.5281/zenodo.24550256
 license: MIT
 repository-code: "https://github.com/Rudra0075-rudi/CoDA-GAT"
 authors:

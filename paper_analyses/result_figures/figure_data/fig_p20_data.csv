@@ -1,0 +1,24 @@
+model,label,family,error_rate
+shuffled_graph,Feature-permuted STRING,gat,0.26033834586466165
+empty_graph,Disconnected graph,gat,0.26033834586466165
+codagat_conditional,"CoDA-GAT, class-cond.",gat,0.2706766917293233
+random_graph,Random graph,gat,0.2706766917293233
+bulk_top1000__catboost,"Top-1,000 genes / CatBoost",tree,0.2725563909774436
+no_h3_deviation,No deviation head,gat,0.27631578947368424
+panel72_full__random_forest,Panel + dev. + pathway / random forest,tree,0.27631578947368424
+codagat_off,"CoDA-GAT, adversary off",gat,0.2781954887218045
+codagat_marginal,"CoDA-GAT, marginal",gat,0.2781954887218045
+panel72_full__catboost,Panel + dev. + pathway / CatBoost,tree,0.2800751879699248
+panel72_combined__xgboost,Panel + dev. / XGBoost,tree,0.2800751879699248
+boruta_lasso_random_forest,Boruta–LASSO / random forest,tree,0.28383458646616544
+panel72_full__logreg,Panel + dev. + pathway / logistic reg.,linear,0.28477443609022557
+panel72_combined__random_forest,Panel + dev. / random forest,tree,0.28477443609022557
+panel72_combined__logreg,Panel + dev. / logistic reg.,linear,0.287593984962406
+no_pathway_features,No pathway features,gat,0.29135338345864664
+bulk_top1000__logreg,"Top-1,000 genes / logistic reg.",linear,0.2932330827067669
+bulk_top1000__random_forest,"Top-1,000 genes / random forest",tree,0.2951127819548872
+panel72_combined__catboost,Panel + dev. / CatBoost,tree,0.29605263157894735
+panel72_full__xgboost,Panel + dev. + pathway / XGBoost,tree,0.29605263157894735
+bulk_top1000__xgboost,"Top-1,000 genes / XGBoost",tree,0.3007518796992481
+no_fold_fitted_features,No fold-fitted features,gat,0.30451127819548873
+boruta_lasso_xgboost,Boruta–LASSO / XGBoost,tree,0.30545112781954886

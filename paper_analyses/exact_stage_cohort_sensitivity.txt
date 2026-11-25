@@ -1,0 +1,4 @@
+Consensus failures (>=19 of 23 wrong): n=800 table=[[82, 26], [388, 304]] pooled OR=2.47 one-sided p=5e-05 | MH OR over 6 informative cohorts=3.02 95% CI 1.87-4.87 CMH p=1.6e-06
+Consensus failures (>=19 of 23 wrong), excluding GSE213621: n=693 table=[[74, 26], [289, 304]] pooled OR=2.99 one-sided p=1.6e-06 | MH OR over 6 informative cohorts=3.02 95% CI 1.87-4.87 CMH p=1.6e-06
+Test A flags (52-flag point): n=800 table=[[35, 10], [435, 320]] pooled OR=2.57 one-sided p=0.0049 | MH OR over 6 informative cohorts=2.33 95% CI 1.08-5.04 CMH p=0.027
+Test A flags (52-flag point), excluding GSE213621: n=693 table=[[23, 10], [340, 320]] pooled OR=2.16 one-sided p=0.03 | MH OR over 6 informative cohorts=2.33 95% CI 1.08-5.04 CMH p=0.027

@@ -1,0 +1,26 @@
+model,label,mean,sd_between_cohort_ddof1,mean_recomputed,sd_recomputed,group,short_label
+bulk_top1000__logreg,"top-1,000 genes / logistic regression",0.7879235710401454,0.0730159477742062,0.7879235710401454,0.07301594777420625,tabular,"Top-1,000 genes / logistic reg."
+boruta_lasso_xgboost,Boruta–LASSO / XGBoost,0.8000597300409406,0.041224939977159,0.8000597300409406,0.04122493997715904,tabular,Boruta–LASSO / XGBoost
+b9_no_pathway_features,Ablation: no pathway features,0.8110571931631765,0.0367411623358188,0.8110571931631765,0.03674116233581884,graph,Ablation: no pathway features
+b9_no_fold_fitted_features,Ablation: no fold-fitted features,0.8114436140848187,0.0471338769688966,0.8114436140848187,0.04713387696889665,graph,Ablation: no fold-fitted features
+b9_no_h3_deviation,Ablation: no deviation head,0.8207068050162314,0.0296038177700139,0.8207068050162314,0.02960381777001393,graph,Ablation: no deviation head
+b7_m0_marginal,"CoDA-GAT, marginal adversary",0.8207266767128356,0.0276088527137346,0.8207266767128356,0.027608852713734703,graph,"CoDA-GAT, marginal adversary"
+b7_m0_conditional,"CoDA-GAT, class-conditional adversary",0.8213919426063949,0.0326259193657253,0.8213919426063949,0.03262591936572534,graph,"CoDA-GAT, class-conditional adversary"
+bulk_top1000__random_forest,"top-1,000 genes / random forest",0.8214046596434588,0.0542197609913669,0.8214046596434588,0.0542197609913669,tabular,"Top-1,000 genes / random forest"
+boruta_lasso_random_forest,Boruta–LASSO / random forest,0.8220261477532119,0.0393062209827225,0.8220261477532119,0.03930622098272254,tabular,Boruta–LASSO / random forest
+b7_m0_off,"CoDA-GAT (primary, adversary off)",0.8224578794152934,0.0266897986749636,0.8224578794152934,0.026689798674963607,primary,CoDA-GAT (primary)
+b7_m1_off,"CoDA-GAT, augmentation m=1",0.8249832599137141,0.0280925066388284,0.824983259913714,0.028092506638828445,graph,"CoDA-GAT, augmentation m=1"
+b7_m3_off,"CoDA-GAT, augmentation m=3",0.8261373446512671,0.0257937767053576,0.8261373446512671,0.025793776705357686,graph,"CoDA-GAT, augmentation m=3"
+b9_random_graph,Ablation: random directed graph,0.8265610772346894,0.0321927747424951,0.8265610772346894,0.03219277474249515,graph,Ablation: random directed graph
+b9_empty_graph,Ablation: disconnected graph,0.826827407849172,0.0444792005667092,0.826827407849172,0.04447920056670929,graph,Ablation: disconnected graph
+panel72_combined__xgboost,72-gene panel + deviation / XGBoost,0.8288445470978478,0.0538808011634766,0.8288445470978478,0.05388080116347661,tabular,Panel + dev. / XGBoost
+b9_shuffled_graph,Ablation: feature-permuted STRING,0.8290047593727163,0.0451907601651326,0.8290047593727163,0.04519076016513263,graph,Ablation: feature-permuted STRING
+panel72_combined__random_forest,72-gene panel + deviation / random forest,0.8292703727793107,0.0415855949930473,0.8292703727793107,0.04158559499304734,tabular,Panel + dev. / random forest
+bulk_top1000__xgboost,"top-1,000 genes / XGBoost",0.8303987409739555,0.0499069982606984,0.8303987409739555,0.04990699826069841,tabular,"Top-1,000 genes / XGBoost"
+bulk_top1000__catboost,"top-1,000 genes / CatBoost",0.8313856188060655,0.036948240625598,0.8313856188060655,0.03694824062559802,tabular,"Top-1,000 genes / CatBoost"
+panel72_full__xgboost,72-gene panel + deviation + pathway / XGBoost,0.8329264658078388,0.0568402463866515,0.8329264658078388,0.056840246386651506,tabular,Panel + dev. + pathway / XGBoost
+panel72_full__random_forest,72-gene panel + deviation + pathway / random forest,0.8371042108898294,0.0489248973409153,0.8371042108898294,0.04892489734091537,tabular,Panel + dev. + pathway / random forest
+panel72_combined__logreg,72-gene panel + deviation / logistic regression,0.8381341904780641,0.0383093509996461,0.8381341904780641,0.03830935099964616,tabular,Panel + dev. / logistic reg.
+panel72_full__logreg,72-gene panel + deviation + pathway / logistic regression,0.8383639316578955,0.0382215615066998,0.8383639316578955,0.03822156150669989,tabular,Panel + dev. + pathway / logistic reg.
+panel72_combined__catboost,72-gene panel + deviation / CatBoost,0.8415882604798652,0.0492135080571704,0.8415882604798652,0.04921350805717048,tabular,Panel + dev. / CatBoost
+panel72_full__catboost,72-gene panel + deviation + pathway / CatBoost,0.8415910651442711,0.0443116143431661,0.8415910651442711,0.04431161434316613,tabular,Panel + dev. + pathway / CatBoost

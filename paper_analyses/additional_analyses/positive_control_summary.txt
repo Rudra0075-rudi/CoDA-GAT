@@ -1,0 +1,53 @@
+graph
+empty       40
+shuffled    40
+string      40
+
+ auc
+graph   empty  shuffled  string
+fold                           
+0      0.4944    0.5349  0.6236
+1      0.5574    0.5831  0.7565
+2      0.5187    0.5578  0.7470
+3      0.5439    0.5732  0.5083
+4      0.5438    0.6102  0.7265
+5      0.5541    0.5648  0.6543
+6      0.4062    0.5260  0.4015
+7      0.5700    0.5705  0.6244
+ means {'empty': 0.5236, 'shuffled': 0.5651, 'string': 0.6303}
+ STRING - disconnected      +0.1067 [+0.0261, +0.1873] n=8 STRING higher in 6 p=0.039
+ STRING - feature-permuted  +0.0652 [-0.0263, +0.1567] n=8 STRING higher in 6 p=0.195
+
+ macro_f1
+graph   empty  shuffled  string
+fold                           
+0      0.5009    0.5144  0.5921
+1      0.5399    0.5431  0.7054
+2      0.4918    0.5383  0.6828
+3      0.5197    0.5251  0.4982
+4      0.5163    0.5860  0.6785
+5      0.5127    0.5459  0.5954
+6      0.4039    0.5094  0.4020
+7      0.4259    0.5018  0.5228
+ means {'empty': 0.4889, 'shuffled': 0.533, 'string': 0.5847}
+ STRING - disconnected      +0.0958 [+0.0312, +0.1604] n=8 STRING higher in 6 p=0.039
+ STRING - feature-permuted  +0.0517 [-0.0229, +0.1262] n=8 STRING higher in 6 p=0.195
+
+ balanced_acc
+graph   empty  shuffled  string
+fold                           
+0      0.5026    0.5271  0.6016
+1      0.5450    0.5488  0.7049
+2      0.5107    0.5482  0.6875
+3      0.5283    0.5340  0.5113
+4      0.5270    0.5905  0.6792
+5      0.5305    0.5546  0.6076
+6      0.4057    0.5144  0.4122
+7      0.4909    0.5361  0.5716
+ means {'empty': 0.5051, 'shuffled': 0.5442, 'string': 0.597}
+ STRING - disconnected      +0.0919 [+0.0328, +0.1510] n=8 STRING higher in 7 p=0.023
+ STRING - feature-permuted  +0.0528 [-0.0178, +0.1234] n=8 STRING higher in 6 p=0.148
+
+STRING runs with test AUROC above 0.7 (planted signal learned): 15 of 40
+empty runs with test AUROC above 0.7: 0 of 40
+shuffled runs with test AUROC above 0.7: 0 of 40

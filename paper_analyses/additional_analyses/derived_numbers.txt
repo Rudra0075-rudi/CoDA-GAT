@@ -1,0 +1,23 @@
+panel genes 72, gene pairs 2556, STRING undirected edges 321
+expected shared edges for a random edge set of size 321: 40.3
+expected Jaccard: 0.067
+
+shortlist of 192 flags
+random from all 1064 test samples: expected recall 0.180
+random from the 470 exact F1/F2 records: expected recall 0.409
+
+Benjamini-Hochberg over 12 ablation comparisons (AUROC and macro-F1)
+               ablation   metric  mean_diff_ablation_minus_full  wilcoxon_p_two_sided   bh_q
+no_fold_fitted_features macro_f1                        -0.0343                0.0156 0.1875
+    no_pathway_features      auc                        -0.0114                0.0547 0.3281
+         shuffled_graph macro_f1                         0.0096                0.1484 0.5938
+    no_pathway_features macro_f1                        -0.0355                0.3828 0.7902
+no_fold_fitted_features      auc                        -0.0110                0.3828 0.7902
+           random_graph macro_f1                         0.0086                0.4609 0.7902
+         shuffled_graph      auc                         0.0065                0.4609 0.7902
+        no_h3_deviation      auc                        -0.0018                0.6406 0.8097
+            empty_graph macro_f1                         0.0240                0.7422 0.8097
+        no_h3_deviation macro_f1                        -0.0041                0.7422 0.8097
+           random_graph      auc                         0.0041                0.7422 0.8097
+            empty_graph      auc                         0.0044                0.9453 0.9453
+smallest q: 0.188

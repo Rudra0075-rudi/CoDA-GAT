@@ -1,0 +1,2 @@
+edges in shared pathway: 209/321 = 0.651
+all gene pairs in shared pathway: 455/2556 = 0.178

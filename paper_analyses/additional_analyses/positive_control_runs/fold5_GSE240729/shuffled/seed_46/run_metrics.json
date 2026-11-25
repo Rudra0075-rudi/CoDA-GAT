@@ -1,0 +1,9 @@
+{
+  "fold": 5,
+  "ablation": "planted_shuffled",
+  "seed": 46,
+  "auc": 0.6080357142857142,
+  "macro_f1": 0.5398351648351649,
+  "balanced_acc": 0.5459821428571429,
+  "best_val_f1": 0.6431349478707062
+}

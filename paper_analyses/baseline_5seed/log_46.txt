@@ -1,0 +1,146 @@
+[B3] CoDA-GAT Block B3 -- baselines
+[B3] folds: ['fold0_GSE130970', 'fold1_GSE135251', 'fold2_GSE162694', 'fold3_GSE193066', 'fold4_GSE213621', 'fold5_GSE240729', 'fold6_GSE31803', 'fold7_GSE84044']  seed=46  mode=tabular
+[B3] PERSISTENCE RE-RUN: regenerating per-sample predictions only. The existing
+[B3] baselines/*/all_folds.csv and summary_*.csv are NOT modified; recomputed metrics
+[B3] go to baselines/per_sample_predictions/ and are checked against the originals.
+[B3] loading shared assets...
+[B3] === fold 0: fold0_GSE130970 ===
+[B3]   [tabular] building feature views + 12 tabular baselines + boruta/lasso...
+[B3]     tabular: bulk_top1000 / logreg
+[B3]     tabular: bulk_top1000 / random_forest
+[B3]     tabular: bulk_top1000 / xgboost
+[B3]     tabular: bulk_top1000 / catboost
+[B3]     tabular: panel72_combined / logreg
+[B3]     tabular: panel72_combined / random_forest
+[B3]     tabular: panel72_combined / xgboost
+[B3]     tabular: panel72_combined / catboost
+[B3]     tabular: panel72_full / logreg
+[B3]     tabular: panel72_full / random_forest
+[B3]     tabular: panel72_full / xgboost
+[B3]     tabular: panel72_full / catboost
+[B3] === fold 1: fold1_GSE135251 ===
+[B3]   [tabular] building feature views + 12 tabular baselines + boruta/lasso...
+[B3]     tabular: bulk_top1000 / logreg
+[B3]     tabular: bulk_top1000 / random_forest
+[B3]     tabular: bulk_top1000 / xgboost
+[B3]     tabular: bulk_top1000 / catboost
+[B3]     tabular: panel72_combined / logreg
+[B3]     tabular: panel72_combined / random_forest
+[B3]     tabular: panel72_combined / xgboost
+[B3]     tabular: panel72_combined / catboost
+[B3]     tabular: panel72_full / logreg
+[B3]     tabular: panel72_full / random_forest
+[B3]     tabular: panel72_full / xgboost
+[B3]     tabular: panel72_full / catboost
+[B3] === fold 2: fold2_GSE162694 ===
+[B3]   [tabular] building feature views + 12 tabular baselines + boruta/lasso...
+[B3]     tabular: bulk_top1000 / logreg
+[B3]     tabular: bulk_top1000 / random_forest
+[B3]     tabular: bulk_top1000 / xgboost
+[B3]     tabular: bulk_top1000 / catboost
+[B3]     tabular: panel72_combined / logreg
+[B3]     tabular: panel72_combined / random_forest
+[B3]     tabular: panel72_combined / xgboost
+[B3]     tabular: panel72_combined / catboost
+[B3]     tabular: panel72_full / logreg
+[B3]     tabular: panel72_full / random_forest
+[B3]     tabular: panel72_full / xgboost
+[B3]     tabular: panel72_full / catboost
+[B3] === fold 3: fold3_GSE193066 ===
+[B3]   [tabular] building feature views + 12 tabular baselines + boruta/lasso...
+[B3]     tabular: bulk_top1000 / logreg
+[B3]     tabular: bulk_top1000 / random_forest
+[B3]     tabular: bulk_top1000 / xgboost
+[B3]     tabular: bulk_top1000 / catboost
+[B3]     tabular: panel72_combined / logreg
+[B3]     tabular: panel72_combined / random_forest
+[B3]     tabular: panel72_combined / xgboost
+[B3]     tabular: panel72_combined / catboost
+[B3]     tabular: panel72_full / logreg
+[B3]     tabular: panel72_full / random_forest
+[B3]     tabular: panel72_full / xgboost
+[B3]     tabular: panel72_full / catboost
+[B3] === fold 4: fold4_GSE213621 ===
+[B3]   [tabular] building feature views + 12 tabular baselines + boruta/lasso...
+[B3]     tabular: bulk_top1000 / logreg
+[B3]     tabular: bulk_top1000 / random_forest
+[B3]     tabular: bulk_top1000 / xgboost
+[B3]     tabular: bulk_top1000 / catboost
+[B3]     tabular: panel72_combined / logreg
+[B3]     tabular: panel72_combined / random_forest
+[B3]     tabular: panel72_combined / xgboost
+[B3]     tabular: panel72_combined / catboost
+[B3]     tabular: panel72_full / logreg
+[B3]     tabular: panel72_full / random_forest
+[B3]     tabular: panel72_full / xgboost
+[B3]     tabular: panel72_full / catboost
+[B3] === fold 5: fold5_GSE240729 ===
+[B3]   [tabular] building feature views + 12 tabular baselines + boruta/lasso...
+[B3]     tabular: bulk_top1000 / logreg
+[B3]     tabular: bulk_top1000 / random_forest
+[B3]     tabular: bulk_top1000 / xgboost
+[B3]     tabular: bulk_top1000 / catboost
+[B3]     tabular: panel72_combined / logreg
+[B3]     tabular: panel72_combined / random_forest
+[B3]     tabular: panel72_combined / xgboost
+[B3]     tabular: panel72_combined / catboost
+[B3]     tabular: panel72_full / logreg
+[B3]     tabular: panel72_full / random_forest
+[B3]     tabular: panel72_full / xgboost
+[B3]     tabular: panel72_full / catboost
+[B3] === fold 6: fold6_GSE31803 ===
+[B3]   [tabular] building feature views + 12 tabular baselines + boruta/lasso...
+[B3]     tabular: bulk_top1000 / logreg
+[B3]     tabular: bulk_top1000 / random_forest
+[B3]     tabular: bulk_top1000 / xgboost
+[B3]     tabular: bulk_top1000 / catboost
+[B3]     tabular: panel72_combined / logreg
+[B3]     tabular: panel72_combined / random_forest
+[B3]     tabular: panel72_combined / xgboost
+[B3]     tabular: panel72_combined / catboost
+[B3]     tabular: panel72_full / logreg
+[B3]     tabular: panel72_full / random_forest
+[B3]     tabular: panel72_full / xgboost
+[B3]     tabular: panel72_full / catboost
+[B3] === fold 7: fold7_GSE84044 ===
+[B3]   [tabular] building feature views + 12 tabular baselines + boruta/lasso...
+[B3]     tabular: bulk_top1000 / logreg
+[B3]     tabular: bulk_top1000 / random_forest
+[B3]     tabular: bulk_top1000 / xgboost
+[B3]     tabular: bulk_top1000 / catboost
+[B3]     tabular: panel72_combined / logreg
+[B3]     tabular: panel72_combined / random_forest
+[B3]     tabular: panel72_combined / xgboost
+[B3]     tabular: panel72_combined / catboost
+[B3]     tabular: panel72_full / logreg
+[B3]     tabular: panel72_full / random_forest
+[B3]     tabular: panel72_full / xgboost
+[B3]     tabular: panel72_full / catboost
+[B3] verifying the persistence patch changed nothing...
+[B3] 
+[B3]   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[B3]   [check] WARNING -- tabular: 10/12 rows DIVERGE from the original B3 metrics by more than tol=1e-06.
+[B3]   This means something other than persistence changed. Inspect metric_reproduction_check_tabular.csv.
+[B3]     fold 0 bulk_top1000__logreg: max abs diff = 0.000755
+[B3]     fold 0 bulk_top1000__random_forest: max abs diff = 0.038159
+[B3]     fold 0 bulk_top1000__xgboost: max abs diff = 0.031943
+[B3]     fold 0 bulk_top1000__catboost: max abs diff = 0.020639
+[B3]     fold 0 panel72_combined__random_forest: max abs diff = 0.002642
+[B3]     fold 0 panel72_combined__xgboost: max abs diff = 0.014340
+[B3]     fold 0 panel72_combined__catboost: max abs diff = 0.069100
+[B3]     fold 0 panel72_full__random_forest: max abs diff = 0.050028
+[B3]     fold 0 panel72_full__xgboost: max abs diff = 0.010566
+[B3]     fold 0 panel72_full__catboost: max abs diff = 0.029434
+[B3]   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[B3] 
+[B3] 
+[B3]   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[B3]   [check] WARNING -- boruta_lasso: 2/2 rows DIVERGE from the original B3 metrics by more than tol=1e-06.
+[B3]   This means something other than persistence changed. Inspect metric_reproduction_check_boruta_lasso.csv.
+[B3]     fold 0 boruta_lasso_random_forest: max abs diff = 0.011736
+[B3]     fold 0 boruta_lasso_xgboost: max abs diff = 0.003774
+[B3]   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[B3] 
+[B3] per-sample predictions written under <repo_copy>/baselines/per_sample_predictions
+[B3] Persistence re-run complete. Original baselines/ record untouched.
+EXIT 0

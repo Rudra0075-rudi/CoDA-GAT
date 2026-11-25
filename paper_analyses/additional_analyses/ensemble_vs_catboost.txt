@@ -1,0 +1,6 @@
+ensemble mean 0.8302 sd 0.0292 | per-seed mean 0.8225
+['arm', 'fold', 'test_cohort', 'auc', 'macro_f1', 'balanced_acc']
+panel72_full__catboost ensemble cat 0.8416 diff 0.0114 [-0.0118, 0.0347] higher 6/8 p=0.312
+panel72_full__catboost per-seed cat 0.8416 diff 0.0191 [-0.0048, 0.0430] higher 6/8 p=0.148
+panel72_combined__catboost ensemble cat 0.8416 diff 0.0114 [-0.0154, 0.0382] higher 6/8 p=0.312
+panel72_combined__catboost per-seed cat 0.8416 diff 0.0191 [-0.0085, 0.0468] higher 6/8 p=0.195

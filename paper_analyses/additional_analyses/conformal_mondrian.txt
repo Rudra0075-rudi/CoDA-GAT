@@ -1,0 +1,38 @@
+                         cov  cov_neg  cov_pos   size
+alpha fold                                           
+0.05  fold0_GSE130970  0.923    0.902    0.968  1.667
+      fold1_GSE135251  0.933    0.988    0.894  1.583
+      fold2_GSE162694  0.900    0.828    1.000  1.623
+      fold3_GSE193066  0.949    0.981    0.927  1.687
+      fold4_GSE213621  0.966    0.981    0.958  1.773
+      fold5_GSE240729  0.940    0.885    0.976  1.525
+      fold6_GSE31803   0.986    0.980    0.994  1.769
+      fold7_GSE84044   0.955    1.000    0.908  1.687
+0.10  fold0_GSE130970  0.844    0.792    0.952  1.426
+      fold1_GSE135251  0.898    0.974    0.845  1.443
+      fold2_GSE162694  0.839    0.723    1.000  1.455
+      fold3_GSE193066  0.894    0.972    0.841  1.432
+      fold4_GSE213621  0.886    0.889    0.885  1.419
+      fold5_GSE240729  0.869    0.823    0.898  1.260
+      fold6_GSE31803   0.944    0.925    0.969  1.458
+      fold7_GSE84044   0.842    1.000    0.679  1.353
+0.20  fold0_GSE130970  0.715    0.645    0.864  1.115
+      fold1_GSE135251  0.827    0.927    0.757  1.227
+      fold2_GSE162694  0.723    0.548    0.966  1.154
+      fold3_GSE193066  0.809    0.926    0.730  1.189
+      fold4_GSE213621  0.815    0.722    0.859  1.177
+      fold5_GSE240729  0.740    0.677    0.780  0.970
+      fold6_GSE31803   0.858    0.810    0.919  1.189
+      fold7_GSE84044   0.698    0.975    0.413  1.094
+alpha 0.05: Mondrian mean cov 0.9440 (min 0.900) size 1.664 | LAC mean cov 0.9473 (min 0.882) size 1.682
+   cohorts below nominal-0.02: Mondrian 2  LAC 2 | below nominal: M 5 L 4
+   worst-class cov mean: M 0.910 L 0.923
+   mean abs dev from nominal: M 0.0202 L 0.0263
+alpha 0.1: Mondrian mean cov 0.8771 (min 0.839) size 1.406 | LAC mean cov 0.8886 (min 0.818) size 1.454
+   cohorts below nominal-0.02: Mondrian 4  LAC 3 | below nominal: M 7 L 5
+   worst-class cov mean: M 0.814 L 0.841
+   mean abs dev from nominal: M 0.0340 L 0.0467
+alpha 0.2: Mondrian mean cov 0.7734 (min 0.698) size 1.139 | LAC mean cov 0.7992 (min 0.682) size 1.200
+   cohorts below nominal-0.02: Mondrian 4  LAC 3 | below nominal: M 4 L 3
+   worst-class cov mean: M 0.663 L 0.719
+   mean abs dev from nominal: M 0.0540 L 0.0644

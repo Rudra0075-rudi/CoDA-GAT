@@ -1,0 +1,26 @@
+model,label,mean,sd_between_cohort_ddof1
+bulk_top1000__logreg,"top-1,000 genes / logistic regression",0.7879235710401454,0.0730159477742062
+boruta_lasso_xgboost,Boruta–LASSO / XGBoost,0.8000597300409406,0.041224939977159
+b9_no_pathway_features,Ablation: no pathway features,0.8110571931631765,0.0367411623358188
+b9_no_fold_fitted_features,Ablation: no fold-fitted features,0.8114436140848187,0.0471338769688966
+b9_no_h3_deviation,Ablation: no deviation head,0.8207068050162314,0.0296038177700139
+b7_m0_marginal,"CoDA-GAT, marginal adversary",0.8207266767128356,0.0276088527137346
+b7_m0_conditional,"CoDA-GAT, class-conditional adversary",0.8213919426063949,0.0326259193657253
+bulk_top1000__random_forest,"top-1,000 genes / random forest",0.8214046596434588,0.0542197609913669
+boruta_lasso_random_forest,Boruta–LASSO / random forest,0.8220261477532119,0.0393062209827225
+b7_m0_off,"CoDA-GAT (primary, adversary off)",0.8224578794152934,0.0266897986749636
+b7_m1_off,"CoDA-GAT, augmentation m=1",0.8249832599137141,0.0280925066388284
+b7_m3_off,"CoDA-GAT, augmentation m=3",0.8261373446512671,0.0257937767053576
+b9_random_graph,Ablation: random directed graph,0.8265610772346894,0.0321927747424951
+b9_empty_graph,Ablation: disconnected graph,0.826827407849172,0.0444792005667092
+panel72_combined__xgboost,72-gene panel + deviation / XGBoost,0.8288445470978478,0.0538808011634766
+b9_shuffled_graph,Ablation: feature-permuted STRING,0.8290047593727163,0.0451907601651326
+panel72_combined__random_forest,72-gene panel + deviation / random forest,0.8292703727793107,0.0415855949930473
+bulk_top1000__xgboost,"top-1,000 genes / XGBoost",0.8303987409739555,0.0499069982606984
+bulk_top1000__catboost,"top-1,000 genes / CatBoost",0.8313856188060655,0.036948240625598
+panel72_full__xgboost,72-gene panel + deviation + pathway / XGBoost,0.8329264658078388,0.0568402463866515
+panel72_full__random_forest,72-gene panel + deviation + pathway / random forest,0.8371042108898294,0.0489248973409153
+panel72_combined__logreg,72-gene panel + deviation / logistic regression,0.8381341904780641,0.0383093509996461
+panel72_full__logreg,72-gene panel + deviation + pathway / logistic regression,0.8383639316578955,0.0382215615066998
+panel72_combined__catboost,72-gene panel + deviation / CatBoost,0.8415882604798652,0.0492135080571704
+panel72_full__catboost,72-gene panel + deviation + pathway / CatBoost,0.8415910651442711,0.0443116143431661

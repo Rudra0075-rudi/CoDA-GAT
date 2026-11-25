@@ -1,0 +1,9 @@
+{
+  "fold": 6,
+  "ablation": "string_full",
+  "seed": 42,
+  "auc": 0.8953125,
+  "macro_f1": 0.7548936170212766,
+  "balanced_acc": 0.753125,
+  "best_val_f1": 0.7275641025641025
+}

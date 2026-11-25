@@ -1,0 +1,10 @@
+['src_idx', 'dst_idx', 'src', 'dst', 'string_score', 'weight'] 642
+mean_attention ['FN1', 'MMP2', 'TP53', 'TGFB1', 'COL1A1', 'COL1A2', 'COL3A1', 'CCL2', 'LUM', 'IL1B', 'THBS2', 'DCN', 'CASP3', 'BCL2', 'THBS1'] ECM 8/15 vs 20/72 p=0.018 rho_deg=0.528 p=1.8e-06
+per_edge ['ALDOB', 'NR1H4', 'RGS5', 'DES', 'MARCO', 'ASGR1', 'TF', 'CYP2C9', 'CYP1A2', 'CYP2E1', 'CPS1', 'ASS1', 'SERPINA1', 'GLUL', 'TAGLN'] ECM 0/15 vs 20/72 p=1.000 rho_deg=-0.642 p=1.2e-09
+connected genes only rho(per_edge,deg)=-0.536 p=3.6e-06 n=66
+sum degree 642
+top 15 by summed attention that are among the 15 highest-degree genes: 12
+connected only per-edge top15 ['TF', 'CYP2C9', 'CYP1A2', 'CYP2E1', 'CPS1', 'ASS1', 'SERPINA1', 'GLUL', 'TAGLN', 'BAX', 'NOTCH3', 'ARG1', 'CASP8', 'PDGFB', 'DDIT3'] ECM 0/15 vs 20/66 p=1.000
+[1, 2, 2, 2, 3, 2, 2, 2, 6, 4, 3, 7, 6, 6, 5]
+mean deg ECM 14.35 other 6.83
+MannwhitneyuResult(statistic=np.float64(839.5), pvalue=np.float64(2.9120244619147447e-05))
