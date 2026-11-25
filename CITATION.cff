@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata from this file."
 type: software
 title: "Code for: Can gene networks help detect significant liver fibrosis? Graph attention and tabular models tested on unseen patient cohorts"
-version: "1.0.0"
+version: "1.1.0"
 doi: 10.5281/zenodo.24490872
 license: MIT
 repository-code: "https://github.com/Rudra0075-rudi/CoDA-GAT"
@@ -12,7 +12,7 @@ authors:
     affiliation: BRAC University
     orcid: "https://orcid.org/0009-0001-0477-9360"
   - family-names: Soham
-    given-names: Rudrajoyti Maitra
+    given-names: Rudra Joyti Maitra
     affiliation: BRAC University
   - family-names: Ghani
     given-names: Ismaeel
@@ -23,11 +23,11 @@ authors:
   - family-names: Ahmed Naahee
     given-names: Samira
     affiliation: BRAC University
-  - family-names: Chakrabarty
-    given-names: Amitabha
-    affiliation: BRAC University
   - family-names: Aziz
     given-names: Azwad
+    affiliation: BRAC University
+  - family-names: Chakrabarty
+    given-names: Amitabha
     affiliation: BRAC University
 keywords:
   - liver fibrosis

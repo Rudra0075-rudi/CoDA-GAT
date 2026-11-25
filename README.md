@@ -114,6 +114,7 @@ test_a/b/c            adjacency, rate-consistency and label-cleaning experiments
 consensus_failures/   do 23 models fail on the same samples?
 figures/              publication figures + diagnosis.txt (superseded/ = not used in the paper)
 preregistration_b6.*  hypotheses and analysis plan, locked before B7 ran
+sensitivity_batch_correction/  tabular baselines with ComBat fitted without the held-out cohort
 ```
 
 ## Reproducing
@@ -170,6 +171,9 @@ python scripts/fix_figures.py             # diagnosis + corrected figs 4,5,11-14
   the fold-fitted features 17–25 are fitted on the whole training split, from which the 15%
   early-stopping set is later drawn. Both are limitations of every reported number
   (`corrections_2026-11/UNRESOLVED.md`, items 2 and 3).
+  For the tabular baselines, refitting ComBat and the control reference without the held-out
+  cohort did not lower AUROC (leading CatBoost 0.843 against 0.841; see
+  `sensitivity_batch_correction/`). CoDA-GAT was not refitted.
 - **The conformal APS implementation had a bug.** The randomization term was omitted, which
   makes APS degenerate at K=2 classes: 19.4% of calibration scores are exactly 1.0, so the
   quantile pins at 1.0 and every prediction set contains both classes. `verification_checks/`
