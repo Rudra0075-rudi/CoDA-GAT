@@ -10,6 +10,7 @@ python $A/attention_degree.py attention_analysis_b9/consensus_gene_ranking.csv \
     shared/graph_topology.csv shared/panel_genes.csv shared/graph_edges.csv > $A/attention_degree.txt
 python $A/attention_uniform_null.py attention_analysis_b9/consensus_gene_ranking.csv \
     shared/graph_edges.csv shared/panel_genes.csv > $A/attention_uniform_null.txt
+python $A/positive_control_reference.py shared/graph_edges.csv > $A/positive_control_reference.txt
 python $A/ensemble_vs_catboost.py results_b7 folds \
     corrections_2026-11/outputs/aggregation/per_cohort_baselines.csv > $A/ensemble_vs_catboost.txt
 python $A/conformal_classcond.py results_b7 folds $A/conformal_classcond.csv > $A/conformal_classcond.txt

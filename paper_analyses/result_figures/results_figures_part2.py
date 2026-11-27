@@ -642,7 +642,7 @@ def p25():
     ax.set_yticks(y[::2] + 0.5); ax.set_yticklabels([cl[int(f_)] for f_ in co["fold"][::2]])
     ax.invert_yaxis()
     ax.set_xlabel("Cross-site minus within-site estimate", labelpad=1)
-    ax.set_title(f"Two implementations: {n_agree}/{len(co)} agree", loc="left", fontsize=7)
+    ax.set_title(f"Cross-site vs within-site: {n_agree}/{len(co)} agree", loc="left", fontsize=7)
     ax.legend(handles=[Line2D([], [], marker="o", color=S.BLUE, ms=2.8, lw=0.8, label="Macro-F1"),
                        Line2D([], [], marker="o", color=S.GREY, ms=2.8, lw=0.8, label="Accuracy")],
               loc="upper left", bbox_to_anchor=(0.0, -0.13), ncol=2)

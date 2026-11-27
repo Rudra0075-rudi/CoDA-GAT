@@ -16,9 +16,9 @@ edges) and feature-permuted STRING (same edges, gene features moved to other nod
 
 If the T2 tests are able to detect a real network contribution, STRING should beat both
 controls here, with an interval that excludes zero. Without edges, or with the features
-moved to the wrong genes, a model sees only part of this signal: in a simulation with
-logistic regression on per-gene terms, the AUROC reachable with the true neighbourhoods
-was 0.98, against 0.67 with no neighbourhoods and 0.59 with permuted ones.
+moved to the wrong genes, a model sees only part of this signal. Reference AUROCs
+from logistic regression on per-gene terms, scored against the same noisy labels and
+against noise-free labels, are computed by positive_control_reference.py.
 
 Usage (from the repository root, Zenodo data restored; see run_positive_control.sh):
     python paper_analyses/additional_analyses/positive_control.py . OUT FOLDS SEEDS ARMS [NOISE]

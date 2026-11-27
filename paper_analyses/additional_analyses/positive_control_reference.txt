@@ -1,0 +1,8 @@
+Positive-control reference AUROCs: 10 replicates, 1000 training and 1000 test samples, 10% label noise in every split
+                        auroc_noisy_labels        auroc_clean_labels       
+                                      mean    std               mean    std
+inputs                                                                     
+true neighbourhoods                  0.890  0.012              0.985  0.002
+no neighbourhoods                    0.668  0.020              0.708  0.016
+permuted neighbourhoods              0.603  0.024              0.626  0.017
+oracle score s                       0.903  0.012              1.000  0.000

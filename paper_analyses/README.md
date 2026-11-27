@@ -24,6 +24,7 @@ python paper_analyses/result_figures/results_figures.py . paper_analyses/additio
 | `additional_analyses/positive_control.py`, `positive_control_summary.py`, `run_positive_control.sh` | Positive control for T2: the label is replaced by a planted signal carried by STRING neighbourhoods, and STRING, disconnected and feature-permuted graphs are trained as in T2 (8 folds × seeds 42–46, 120 runs). Outputs: `positive_control_runs/`, `positive_control_runs.csv`, `positive_control_summary.txt` |
 | `additional_analyses/edge_pathway_overlap.py` | Share of STRING edges that join genes of a shared pathway (209 of 321, against 455 of 2,556 gene pairs). Output: `edge_pathway_overlap.txt` |
 | `additional_analyses/attention_degree.py` | Summed and per-edge attention against STRING degree (T2, attention). Output: `attention_degree.txt` |
+| `additional_analyses/positive_control_reference.py` | Reference AUROCs for the positive control: logistic regression on per-gene terms from the true, no or permuted neighbourhoods, scored against the noisy planted labels and against noise-free labels (T2, positive control). Output: `positive_control_reference.txt` |
 | `additional_analyses/attention_uniform_null.py` | Observed attention against the uniform-attention null, and the genes whose attention the model raised above it (T2, attention). Output: `attention_uniform_null.txt` |
 | `additional_analyses/ensemble_vs_catboost.py` | CatBoost against CoDA-GAT, per-seed mean and five-seed ensemble, paired over cohorts (T1). Output: `ensemble_vs_catboost.txt` |
 | `additional_analyses/conformal_classcond.py` | LAC coverage at 95, 90 and 80% nominal, by cohort and by true class (T4). Outputs: `conformal_classcond.csv`, `conformal_classcond.txt` |
@@ -56,7 +57,7 @@ Paths are relative to the repository root. T1–T5 are the framework tests of th
 | T2 | Ablations | `corrections_2026-11/outputs/aggregation/ablation_summary_recomputed.csv`, `ablations_b9/ablation_report.txt`; q values in `derived_numbers.txt` |
 | T2 | Ordinal head (five folds), augmentation arms | `h2_decision/per_fold.csv`, `results_b7_m1/`, `results_b7_m3/` |
 | T2 | Context-free node features | `paper_analyses/additional_analyses/ctxfree_summary.txt` |
-| T2 | Positive control (planted graph signal) | `paper_analyses/additional_analyses/positive_control_summary.txt` |
+| T2 | Positive control (planted graph signal) | `paper_analyses/additional_analyses/positive_control_summary.txt`, `paper_analyses/additional_analyses/positive_control_reference.txt` |
 | T2 | Single-fold checks | `baselines/summary_graph_controls.csv`, `baselines/summary_hybrids.csv` |
 | T2 | Attention | `attention_analysis_b9/`, `paper_analyses/additional_analyses/attention_degree.txt`, `paper_analyses/additional_analyses/attention_uniform_null.txt` |
 | T3 | Adversary modes | `results_b7/primary_contrast_report.txt` |
