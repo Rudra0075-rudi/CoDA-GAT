@@ -15,8 +15,7 @@ uncertainty and a cohort adversary for batch invariance.
 
 This repository contains the complete experimental record: every
 script, every saved run and every analysis output, including the results that did not go
-our way. The processed dataset is deposited separately (see Data). The negative findings are in here on purpose. A reader who can only find the
-favourable half of a study has no reason to believe the favourable half.
+our way. The processed dataset is deposited separately (see Data). Negative results are included.
 
 ## Headline results
 
@@ -30,22 +29,22 @@ compare the means, not the spreads. Source: `corrections_2026-11/outputs/aggrega
 | CoDA-GAT, primary configuration (adversary off, m=0), mean per seed | **0.822 ± 0.027** |
 | CoDA-GAT, same, five-seed ensemble | 0.830 ± 0.029 |
 | Empty graph (same network, no edges), mean per seed | 0.827 ± 0.044 |
-| Shuffled STRING graph, mean per seed | 0.829 ± 0.045 |
+| Feature-permuted STRING graph, mean per seed | 0.829 ± 0.045 |
 
 `panel72_combined__catboost` ties at 0.842 (SD 0.049). Earlier versions of this README gave
 0.842 ± 0.047 and 0.822 ± 0.030: the first SD is not reproducible from the saved
 predictions, and the second is the SD over 40 runs, not between cohorts.
 
-Three things follow, and we state them plainly:
+Main findings:
 
-1. **CoDA-GAT does not beat a well-tuned gradient-boosted baseline.** These results do not establish an accuracy ceiling or prove that disputed labels are wrong.
-2. **The STRING graph did not improve mean AUC in these experiments.** Empty, shuffled and random graphs
-   tie or narrowly beat the real biological topology. This is reproduced independently in
+1. **CoDA-GAT does not beat a gradient-boosted baseline with fixed hyperparameters.** These results do not establish an accuracy ceiling or prove that disputed labels are wrong.
+2. **The STRING graph did not improve mean AUC in these experiments.** Empty, feature-permuted and random graphs
+   tie or narrowly beat the STRING graph. This is reproduced independently in
    `ablations_b9/`, `graph_utility/` and `learned_graph/`.
 3. **Graphs learned from the data do not rescue it either.** Co-expression and end-to-end
    learned topologies, held to STRING's exact edge budget, do not beat the empty graph under
    masking. The end-to-end variant's overlap with STRING (Jaccard 0.063) is at chance, and its
-   cross-fold stability is 0.312. These observations alone do not establish the cause of instability.
+   cross-fold stability is 0.312.
 
 The one place the graph might do something is **robustness to feature perturbation** (masking
 genes), and even there the result is metric-dependent and, at n = 8 cohorts, directional only.
@@ -226,4 +225,4 @@ Software DOI (version 1.2.0): [10.5281/zenodo.24550256](https://doi.org/10.5281/
 
 This repository records undergraduate thesis experiments on graph learning for liver fibrosis staging. The accepted iCACCESS 2026 paper **Graph Attention Versus Tabular Models for Early Liver Fibrosis Staging: A Leakage-Controlled Multi-Cohort Benchmark** is a separate research output; do not assume its dataset, protocol or results are identical to this repository.
 
-Research code only; not validated for clinical diagnosis. The empirical results above are retained from the existing experiment record and were not rerun during the documentation update.
+Research code only; not validated for clinical diagnosis.
