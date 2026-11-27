@@ -1,0 +1,8 @@
+genes 72, directed edge entries 642
+Spearman rho(observed, uniform null) = 0.843, Pearson r = 0.919
+Spearman rho(observed, degree) = 0.528
+ratio observed/expected: range 0.64-1.75
+connected genes: Spearman rho(ratio, degree) = 0.246 (n=66)
+15 most up-weighted genes: ['VCAN', 'LUM', 'THBS2', 'COL5A1', 'PDGFB', 'SPARC', 'COL3A1', 'BAX', 'COL6A1', 'COL1A2', 'CASP8', 'MMP2', 'COL4A1', 'SPP1', 'DCN']
+ECM among them: 11 of 15, against 20 of 72 in the panel; one-sided Fisher p = 4.2e-05
+median ratio ECM 1.20, other genes 0.93; one-sided Mann-Whitney p = 5.5e-05
