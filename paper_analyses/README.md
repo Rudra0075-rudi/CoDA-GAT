@@ -29,6 +29,7 @@ python paper_analyses/result_figures/results_figures.py . paper_analyses/additio
 | `additional_analyses/ensemble_vs_catboost.py` | CatBoost against CoDA-GAT, per-seed mean and five-seed ensemble, paired over cohorts (T1). Output: `ensemble_vs_catboost.txt` |
 | `additional_analyses/conformal_classcond.py` | LAC coverage at 95, 90 and 80% nominal, by cohort and by true class (T4). Outputs: `conformal_classcond.csv`, `conformal_classcond.txt` |
 | `additional_analyses/conformal_mondrian.py` | Class-conditional (Mondrian) sets (T4). Outputs: `conformal_mondrian.csv`, `conformal_mondrian.txt` |
+| `additional_analyses/conformal_betabinom.py` | Mondrian coverage at 90% nominal against its beta-binomial distribution under exchangeability: expected and observed cohort–class cells below 85% per seed, and lower-tail probabilities of F2+ coverage in GSE84044 (T4). Output: `conformal_betabinom.txt` |
 | `additional_analyses/derived_numbers.py` | Chance overlap of a random edge set with STRING (40.3 edges, Jaccard 0.067); random-shortlist baselines for planted-error recall (18.0% and 40.9%); Benjamini–Hochberg q values of the ablations (smallest 0.19). Output: `derived_numbers.txt` |
 | `exact_stage_cohort_sensitivity.py` | Cohort-stratified (Mantel–Haenszel) and GSE213621-excluded boundary enrichment (T5). Output: `exact_stage_cohort_sensitivity.txt` |
 | `baseline_5seed/` | Five-seed refit of the fourteen tabular models (T1). See its README |
@@ -43,6 +44,8 @@ Re-running `run_ctx_free.sh` in that environment reproduced all 160 runs to with
 ## Where each reported result comes from
 
 Paths are relative to the repository root. T1–T5 are the framework tests of the paper.
+The summaries print rounded values, and the paper rounds the unrounded ones, so a mean
+printed as 0.8105 (unrounded 0.810497) appears in the paper as 0.810.
 
 | Paper section | Result | Source |
 |---|---|---|
@@ -51,8 +54,8 @@ Paths are relative to the repository root. T1–T5 are the framework tests of th
 | T1 | Tabular macro-F1 at calibration thresholds | `corrections_2026-11/outputs/aggregation/per_cohort_baselines.csv` |
 | T1 | Paired CatBoost differences (0.019 and 0.011) | `paper_analyses/additional_analyses/ensemble_vs_catboost.txt` |
 | T1 | Five-seed refit table | `paper_analyses/baseline_5seed/summary.csv` |
-| T2 | Control graphs | `corrections_2026-11/outputs/aggregation/summary.txt`, `ablations_b9/`, `graph_utility/` |
-| T2 | Learned graphs (overlap, stability, hubs) | `learned_graph/summary.txt`; chance overlap in `derived_numbers.txt` |
+| T2 | Control graphs | `corrections_2026-11/outputs/aggregation/summary.txt`, `ablations_b9/`, `graph_utility/`; unmasked AUROCs of the masking experiment, which retrained the controls, in `learned_graph/summary.txt` |
+| T2 | Learned graphs (overlap, stability, hubs) | `learned_graph/summary.txt`; hubs by fold in `learned_graph/topology_comparison.csv`, STRING degree in `shared/graph_topology.csv`; chance overlap in `derived_numbers.txt` |
 | T2 | Gene masking | `review_fixes/summary.txt` (task 1), `graph_utility/`; contrast of every graph with the disconnected model in `result_figures/figure_data/fig_p13_data.csv` |
 | T2 | Ablations | `corrections_2026-11/outputs/aggregation/ablation_summary_recomputed.csv`, `ablations_b9/ablation_report.txt`; q values in `derived_numbers.txt` |
 | T2 | Ordinal head (five folds), augmentation arms | `h2_decision/per_fold.csv`, `results_b7_m1/`, `results_b7_m3/` |
@@ -62,13 +65,14 @@ Paths are relative to the repository root. T1–T5 are the framework tests of th
 | T2 | Attention | `attention_analysis_b9/`, `paper_analyses/additional_analyses/attention_degree.txt`, `paper_analyses/additional_analyses/attention_uniform_null.txt` |
 | T3 | Adversary modes | `results_b7/primary_contrast_report.txt` |
 | T3 | Degradation decomposition, placebo and cross-site versus within-site checks | `decomposition_b8/b8_summary.txt`, `safety_checks_b5/` |
-| T4 | Pooled LAC and corrected APS coverage, set size and share of two-class sets | `review_fixes/summary.txt` (task 3), `verification_checks/aps_diagnostic.txt` |
+| T4 | Pooled LAC and corrected APS coverage, set size and share of two-class sets | `review_fixes/summary.txt` (task 3), `verification_checks/aps_diagnostic.txt`; unrounded means in `result_figures/figure_data/fig_p8_data.csv` |
 | T4 | F2+ calls at the 0.5 threshold against recorded prevalence, by cohort | `flagging_v4/summary.txt` (task 3) |
-| T4 | Coverage by cohort, level and class; Mondrian sets | `conformal_classcond.txt`, `conformal_mondrian.txt` |
+| T4 | Coverage by cohort, level and class; Mondrian sets | `conformal_classcond.txt`, `conformal_mondrian.txt`; unrounded values in the matching `.csv` files |
+| T4 | Mondrian coverage expected under exchangeability (beta-binomial reference) | `paper_analyses/additional_analyses/conformal_betabinom.txt` |
 | T5 | Shared errors and consensus failures | `corrections_2026-11/outputs/consensus_failures/summary.txt` |
 | T5 | Boundary enrichment | `corrections_2026-11/outputs/stage_enrichment/summary.txt`, `paper_analyses/exact_stage_cohort_sensitivity.txt` |
 | T5 | Reference-standard ceiling | `review_fixes/summary.txt` (task 4), `review_fixes/task4_latent_noise_ceiling.csv` |
-| T5 | Review flags, planted errors, Confident Learning, split-half stability | `test_a_adjacency/`, `flagging_v4/summary.txt`; random baselines in `derived_numbers.txt` |
+| T5 | Review flags, planted errors, Confident Learning, split-half stability | `test_a_adjacency/`, `flagging_v4/summary.txt`; Confident Learning intervals in `flagging_v3/noise_rate_estimates.csv`; unrounded split-half and planted-error values in `flagging_v4/task1_split_half_stability.csv` and `flagging_v4/task2_planted_summary.csv`; random baselines in `derived_numbers.txt` |
 | T5 | Removing flagged training samples | `test_c_cleaning/summary.txt` |
 | Label audit | Original coding against exact stages | `corrections_2026-11/outputs/stage_enrichment/summary.txt` |
 | Robustness | Batch-correction check | `sensitivity_batch_correction/` |

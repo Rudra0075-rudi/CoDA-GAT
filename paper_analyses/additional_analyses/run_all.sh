@@ -16,6 +16,7 @@ python $A/ensemble_vs_catboost.py results_b7 folds \
 python $A/conformal_classcond.py results_b7 folds $A/conformal_classcond.csv > $A/conformal_classcond.txt
 python $A/conformal_mondrian.py results_b7 folds $A/conformal_classcond.csv \
     $A/conformal_mondrian.csv > $A/conformal_mondrian.txt
+python $A/conformal_betabinom.py folds $A/conformal_mondrian.csv > $A/conformal_betabinom.txt
 python paper_analyses/exact_stage_cohort_sensitivity.py . > paper_analyses/exact_stage_cohort_sensitivity.txt
 python paper_analyses/baseline_5seed/summarise_seeds.py paper_analyses/baseline_5seed > /dev/null
 echo "done"

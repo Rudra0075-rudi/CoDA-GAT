@@ -13,7 +13,9 @@ channels:
 dependencies:
   - python=3.11
   - numpy
-  - pandas=3.0.3     # 3.1 changed CSV float parsing; the analysis-only check needs 3.0.x
+  - pandas=3.0.3     # 3.1 changed CSV float parsing. The pip step below replaces this with
+                     # pandas 2.3.x (inmoose needs anndata, which requires pandas<3); the
+                     # analysis-only check passes with 2.3.3 as well as with 3.0.3.
   - scipy
   - scikit-learn
   - matplotlib
