@@ -20,8 +20,9 @@ our way. The processed dataset is deposited separately (see Data). Negative resu
 ## Headline results
 
 AUROC averaged over the **8 held-out cohorts**; ± is the between-cohort SD (ddof=1). GAT
-rows average 5 training seeds per cohort; the baselines were run once (single seed), so
-compare the means, not the spreads. Source: `corrections_2026-11/outputs/aggregation/summary.txt`.
+rows average 5 training seeds per cohort; the baselines in this table were run once (single seed), so
+compare the means, not the spreads. A later five-seed refit of all fourteen tabular models
+(`paper_analyses/baseline_5seed/`) kept CatBoost the best model (mean 0.841, seed range 0.836–0.843). Source: `corrections_2026-11/outputs/aggregation/summary.txt`.
 
 | Model | Cross-cohort AUROC |
 |---|---|
